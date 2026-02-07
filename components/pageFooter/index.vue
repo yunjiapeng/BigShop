@@ -1,45 +1,37 @@
 <template>
-	<!-- 底部导航 -->
-	<view v-if="showTabBar">
-		<view class="fixed-lb w-full pb-safe z-999" :style="[bgColor]">
-			<view class="page-footer-wrapper">
-				<view
-					class="page-footer"
-					:class="{
-						'page-footer2': newData.navStyleConfig.tabVal == 1,
-						'page-footer3': newData.navStyleConfig.tabVal == 2
-					}"
-					id="target"
-					:style="[componentStyle]"
-				>
-					<view class="foot-item flex-1 flex-col flex-center h-96 relative" v-for="(item, index) in newData.menuList" :key="index" @click="goRouter(item)">
-						<template v-if="item.link.split('?')[0] == activeRouter">
-							<image v-if="newData.navStyleConfig.tabVal != 1" :src="item.imgList[0]"></image>
-							<view v-if="newData.navStyleConfig.tabVal != 2" class="txt active" :style="[txtActiveColor]">{{ item.name }}</view>
-						</template>
-						<template v-else>
-							<image v-if="newData.navStyleConfig.tabVal != 1" :src="item.imgList[1]"></image>
-							<view v-if="newData.navStyleConfig.tabVal != 2" class="txt" :style="[txtColor]">{{ item.name }}</view>
-						</template>
-						<BaseBadge v-if="item.link === '/pages/order_addcart/order_addcart' && cartNum > 0" class="uni-badge-left-margin" :text="cartNum" absolute="rightTop"></BaseBadge>
+	<view v-if="showTabBar" class="modern-footer-host">
+		<view class="modern-footer">
+			<view class="modern-footer-inner">
+				<view class="nav-item" :class="{ active: isActive(navItems[0].link) }" @click="goRouter(navItems[0])">
+					<text class="iconfont nav-icon" :class="navItems[0].icon"></text>
+					<view class="nav-text">首页</view>
+				</view>
+
+				<view class="nav-item center" :class="{ active: isActive(navItems[1].link) }" @click="goRouter(navItems[1])">
+					<view class="center-bg"></view>
+					<view class="center-btn">
+						<text class="iconfont center-icon" :class="navItems[1].icon"></text>
 					</view>
+					<view class="nav-text">班级</view>
+				</view>
+
+				<view class="nav-item" :class="{ active: isActive(navItems[2].link) }" @click="goRouter(navItems[2])">
+					<text class="iconfont nav-icon" :class="navItems[2].icon"></text>
+					<view class="nav-text">我的</view>
 				</view>
 			</view>
 		</view>
-		<view :style="{ height: `${footerHeight}px` }"></view>
+		<view class="modern-footer-spacer" :style="{ height: `${footerHeight}px` }"></view>
 		<view class="safe-area-inset-bottom"></view>
 	</view>
 </template>
 
 <script>
-import { mapState, mapGetters } from 'vuex';
+import { mapGetters } from 'vuex';
 import { getNavigation } from '@/api/public.js';
-// import {getCartCounts} from '@/api/order.js';
 import { getDiyVersion } from '@/api/api.js';
-import BaseBadge from '@/components/BaseBadge/index.vue';
 export default {
 	name: 'pageFooter',
-	components: { BaseBadge },
 	props: {
 		isTabBar: {
 			type: Boolean,
@@ -51,95 +43,60 @@ export default {
 		}
 	},
 	computed: {
-		...mapGetters(['isLogin', 'cartNum']),
-		txtActiveColor() {
-			let styleObject = {};
-			if (this.newData.toneConfig && this.newData.toneConfig.tabVal) {
-				styleObject['color'] = this.newData.activeTxtColor.color[0].item;
-			}
-			return styleObject;
-		},
-		txtColor() {
-			let styleObject = {};
-			if (this.newData.toneConfig && this.newData.toneConfig.tabVal) {
-				styleObject['color'] = this.newData.txtColor.color[0].item;
-			}
-			return styleObject;
-		},
-		bgColor() {
-			let styleObject = {};
-			if (!this.newData.name) {
-				return styleObject;
-			}
-			if (!this.newData.navConfig.tabVal) {
-				styleObject['background'] = this.newData.bgColor.color[0].item;
-			}
-			return styleObject;
-		},
-		componentStyle() {
-			let styleObject = {};
-			let borderRadius = ``;
-			if (!this.newData.name) {
-				return styleObject;
-			}
-			if (this.newData.navConfig.tabVal) {
-				borderRadius = `${this.newData.fillet.val * 2}rpx`;
-				if (this.newData.fillet.type) {
-					borderRadius = `${this.newData.fillet.valList[0].val * 2}rpx ${this.newData.fillet.valList[1].val * 2}rpx ${this.newData.fillet.valList[3].val * 2}rpx ${
-						this.newData.fillet.valList[2].val * 2
-					}rpx`;
-				}
-				styleObject['right'] = `${this.newData.prConfig.val * 2}rpx`;
-				styleObject['bottom'] = `${this.newData.mbConfig.val * 2}rpx`;
-				styleObject['left'] = `${this.newData.prConfig.val * 2}rpx`;
-				styleObject['padding-top'] = `${this.newData.topConfig.val * 2}rpx`;
-				styleObject['padding-bottom'] = `${this.newData.bottomConfig.val * 2}rpx`;
-				styleObject['border-radius'] = borderRadius;
-				styleObject['background'] = this.newData.bgColor2.color[0].item;
-			} else {
-				styleObject['padding-top'] = `${this.newData.topConfig.val * 2}rpx`;
-				styleObject['padding-bottom'] = `${this.newData.bottomConfig.val * 2}rpx`;
-				styleObject['background'] = this.newData.bgColor.color[0].item;
-			}
-			return styleObject;
-		}
+		...mapGetters(['isLogin'])
 	},
 	watch: {
 		configData(newVal) {
-			if (!this.showTabBar && newVal) {
-				let configData = newVal;
-				this.newData = configData;
-				this.showTabBar = configData.effectConfig.tabVal;
-			}
+			if (newVal) this.setNavigationInfo(newVal);
 		}
 	},
 	created() {
-		let routes = getCurrentPages(); //获取当前打开过的页面路由数组
-		let curRoute = routes[routes.length - 1].route; //获取当前页面路由
-		this.activeRouter = '/' + curRoute;
+		this.syncActiveRoute();
 	},
 	mounted() {
 		this.navigationInfo();
-		// if (this.isLogin) {
-		// 	this.getCartNum()
-		// }
+		this.updateFooterHeight();
 	},
 	data() {
 		return {
 			newData: {},
 			activeRouter: '',
-			showTabBar: false,
-			footerHeight: 0
+			showTabBar: true,
+			footerHeight: 0,
+			navItems: [
+				{ key: 'home', name: '首页', link: '/pages/index/index', icon: 'icon-shouye1' },
+				{ key: 'class', name: '班级', link: '/pages/goods_cate/goods_cate', icon: 'icon-fenlei' },
+				{ key: 'mine', name: '我的', link: '/pages/user/index', icon: 'icon-wode' }
+			]
 		};
 	},
 	methods: {
+		updateFooterHeight() {
+			try {
+				this.footerHeight = uni.upx2px(120);
+			} catch (e) {
+				this.footerHeight = 60;
+			}
+		},
+		syncActiveRoute() {
+			let routes = getCurrentPages();
+			let cur = routes[routes.length - 1];
+			let fullPath = '';
+			if (cur && cur.$page && cur.$page.fullPath) fullPath = cur.$page.fullPath;
+			else if (cur && cur.route) fullPath = '/' + cur.route;
+			this.activeRouter = (fullPath || '').split('?')[0];
+		},
+		isActive(link) {
+			return (this.activeRouter || '').split('?')[0] === link;
+		},
 		setNavigationInfo(data) {
 			if (this.isTabBar) {
 				this.newData = data;
-				this.showTabBar = data.effectConfig.tabVal;
-				let pdHeight = data.topConfig.val + data.bottomConfig.val;
-				this.$emit('newDataStatus', data.effectConfig.tabVal, pdHeight);
-				if (data.effectConfig.tabVal) {
+				const visible = !!(data && data.effectConfig && data.effectConfig.tabVal);
+				this.showTabBar = visible;
+				const pdHeight = data && data.topConfig && data.bottomConfig ? data.topConfig.val + data.bottomConfig.val : 30;
+				this.$emit('newDataStatus', visible, pdHeight);
+				if (visible) {
 					uni.hideTabBar();
 				} else {
 					uni.showTabBar();
@@ -169,6 +126,7 @@ export default {
 			}
 		},
 		goRouter(item) {
+			this.syncActiveRoute();
 			var pages = getCurrentPages();
 			var page = pages[pages.length - 1].$page.fullPath;
 			if (item.link == page) return;
@@ -189,15 +147,6 @@ export default {
 				}
 			});
 		}
-		// getCartNum: function() {
-		// 	getCartCounts().then(res => {
-		// 		this.$store.commit('indexData/setCartNum', res.data.count + '')
-		// 	}).catch(err=>{
-		// 		return this.$util.Tips({
-		// 			title: err.msg
-		// 		});
-		// 	})
-		// },
 	}
 };
 </script>
@@ -209,80 +158,151 @@ export default {
 	height: env(safe-area-inset-bottom);
 }
 
-.page-footer-wrapper {
+.modern-footer-host {
 	position: relative;
 }
 
-.page-footer {
-	position: absolute;
+.modern-footer {
+	position: fixed;
+	left: 0;
 	right: 0;
 	bottom: 0;
-	left: 0;
+	z-index: 999;
+	padding: 0 24rpx;
+	padding-bottom: calc(env(safe-area-inset-bottom));
+}
+
+.modern-footer-inner {
+	position: relative;
+	height: 120rpx;
 	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 12rpx;
+	padding: 14rpx 10rpx 18rpx;
+	border-radius: 28rpx;
+	overflow: visible;
+	background: rgba(255, 255, 255, 0.62);
+	border: 1rpx solid rgba(255, 255, 255, 0.45);
+	box-shadow: 0 16rpx 44rpx rgba(17, 17, 17, 0.12);
+}
 
-	.foot-item image {
-		display: block;
-		height: 48rpx;
-		width: 48rpx;
-		margin: 0 auto;
-	}
-
-	.foot-item .txt {
-		margin-top: 4rpx;
-		font-size: 20rpx;
-		line-height: 28rpx;
-		color: #333333;
-
-		&.active {
-			color: var(--view-theme);
-		}
-	}
-}
-.page-footer /deep/.uni-badge--x {
-	position: absolute !important;
-	top: 0rpx;
-}
-.page-footer .uni-badge-left-margin{
-	position: absolute;
-	/* #ifdef MP */
-	margin-left: 40rpx;
-	top: -10rpx;
-	/* #endif */
-}
-.page-footer /deep/ .uni-badge-left-margin .uni-badge--error {
-	color: #fff !important;
-	background-color: var(--view-theme) !important;
-	z-index: 8;
-}
-.page-footer /deep/ .uni-badge {
-	right: unset !important;
-	top: unset !important;
-}
-.page-footer2 .foot-item .txt {
-	margin-top: 0;
-	font-size: 32rpx;
-	line-height: 44rpx;
-	color: #333333;
-
-	&.active {
-		color: var(--view-theme);
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+	.modern-footer-inner {
+		-webkit-backdrop-filter: blur(18px);
+		backdrop-filter: blur(18px);
 	}
 }
 
-.page-footer2.float .foot-item::before,
-.page-footer3.float .foot-item::before {
+.modern-footer-inner::before {
 	content: '';
 	position: absolute;
-	top: 50%;
 	left: 0;
-	width: 2rpx;
-	height: 32rpx;
-	background: #cccccc;
-	transform: translateY(-50%);
+	right: 0;
+	bottom: 0;
+	height: 140rpx;
+	transform: translateY(20rpx);
+	border-radius: 32rpx;
+	background: linear-gradient(0deg, rgba(233, 51, 35, 0.22) 0%, rgba(255, 255, 255, 0.05) 70%, rgba(255, 255, 255, 0) 100%);
+	pointer-events: none;
 }
 
-.page-footer2.float .foot-item:first-child::before,
-.page-footer3.float .foot-item:first-child::before {
-	display: none;
+.nav-item {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 6rpx;
+	padding: 8rpx 0;
+	min-width: 0;
+	transition: transform 220ms cubic-bezier(0.2, 0.85, 0.2, 1), color 220ms ease, opacity 220ms ease;
+}
+
+.nav-icon {
+	font-size: 44rpx;
+	line-height: 1;
+	color: rgba(40, 40, 40, 0.72);
+	transition: transform 220ms cubic-bezier(0.2, 0.85, 0.2, 1), color 220ms ease;
+}
+
+.nav-text {
+	font-size: 22rpx;
+	line-height: 28rpx;
+	color: rgba(40, 40, 40, 0.72);
+	transition: color 220ms ease, opacity 220ms ease;
+	white-space: nowrap;
+}
+
+.nav-item.active .nav-icon,
+.nav-item.active .nav-text {
+	color: var(--view-theme);
+}
+
+.nav-item:active {
+	transform: scale(0.96);
+}
+
+.nav-item.center {
+	position: relative;
+	flex: 1.2;
+	padding-top: 0;
+	justify-content: flex-start;
+	margin-top: -44rpx;
+}
+
+.center-bg {
+	position: absolute;
+	left: 50%;
+	top: 14rpx;
+	width: 180rpx;
+	height: 180rpx;
+	transform: translateX(-50%);
+	border-radius: 50%;
+	background: radial-gradient(circle at 50% 55%, rgba(233, 51, 35, 0.22) 0%, rgba(233, 51, 35, 0.12) 36%, rgba(233, 51, 35, 0) 70%);
+	pointer-events: none;
+}
+
+.center-btn {
+	width: 112rpx;
+	height: 112rpx;
+	border-radius: 56rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, #f73730 0%, #f86429 100%);
+	box-shadow: 0 20rpx 46rpx rgba(247, 55, 48, 0.28);
+	border: 2rpx solid rgba(255, 255, 255, 0.75);
+	transform: translateY(0);
+	transition: transform 260ms cubic-bezier(0.2, 0.85, 0.2, 1), box-shadow 260ms ease, filter 260ms ease;
+}
+
+.center-icon {
+	font-size: 50rpx;
+	line-height: 1;
+	color: rgba(255, 255, 255, 0.96);
+}
+
+.nav-item.center:active .center-btn {
+	transform: scale(0.96);
+	filter: brightness(0.98);
+}
+
+.nav-item.center.active .center-btn {
+	box-shadow: 0 24rpx 58rpx rgba(247, 55, 48, 0.36);
+}
+
+.nav-item.center .nav-text {
+	margin-top: 10rpx;
+	font-size: 22rpx;
+	color: rgba(40, 40, 40, 0.74);
+}
+
+.nav-item.center.active .nav-text {
+	color: rgba(233, 51, 35, 0.96);
+}
+
+.modern-footer-spacer {
+	width: 100%;
 }
 </style>
