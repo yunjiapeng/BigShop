@@ -4,19 +4,19 @@
 			<view class="modern-footer-inner">
 				<view class="nav-item" :class="{ active: isActive(navItems[0].link) }" @click="goRouter(navItems[0])">
 					<text class="iconfont nav-icon" :class="navItems[0].icon"></text>
-					<view class="nav-text">首页</view>
+					<view class="nav-text">{{ navItems[0].name }}</view>
 				</view>
 
 				<view class="nav-item center" :class="{ active: isActive(navItems[1].link) }" @click="goRouter(navItems[1])">
 					<view class="center-btn">
-						<text class="center-icon">☀</text>
+						<text class="iconfont center-icon" :class="navItems[1].icon"></text>
 					</view>
-					<view class="nav-text">班级</view>
+					<view class="nav-text">{{ navItems[1].name }}</view>
 				</view>
 
 				<view class="nav-item" :class="{ active: isActive(navItems[2].link) }" @click="goRouter(navItems[2])">
 					<text class="iconfont nav-icon" :class="navItems[2].icon"></text>
-					<view class="nav-text">我的</view>
+					<view class="nav-text">{{ navItems[2].name }}</view>
 				</view>
 			</view>
 		</view>
@@ -64,7 +64,7 @@ export default {
 			footerHeight: 0,
 			navItems: [
 				{ key: 'home', name: '首页', link: '/pages/index/index', icon: 'icon-shouye1' },
-				{ key: 'class', name: '班级', link: '/pages/goods_cate/goods_cate', icon: 'icon-fenlei' },
+				{ key: 'course', name: '课程', link: '/pages/course/index', icon: 'icon-fenlei2' },
 				{ key: 'mine', name: '我的', link: '/pages/user/index', icon: 'icon-wode' }
 			]
 		};
