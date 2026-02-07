@@ -8,9 +8,8 @@
 				</view>
 
 				<view class="nav-item center" :class="{ active: isActive(navItems[1].link) }" @click="goRouter(navItems[1])">
-					<view class="center-bg"></view>
 					<view class="center-btn">
-						<text class="iconfont center-icon" :class="navItems[1].icon"></text>
+						<text class="center-icon">☀</text>
 					</view>
 					<view class="nav-text">班级</view>
 				</view>
@@ -73,9 +72,9 @@ export default {
 	methods: {
 		updateFooterHeight() {
 			try {
-				this.footerHeight = uni.upx2px(120);
+				this.footerHeight = uni.upx2px(96);
 			} catch (e) {
-				this.footerHeight = 60;
+				this.footerHeight = 48;
 			}
 		},
 		syncActiveRoute() {
@@ -92,7 +91,8 @@ export default {
 		setNavigationInfo(data) {
 			if (this.isTabBar) {
 				this.newData = data;
-				const visible = !!(data && data.effectConfig && data.effectConfig.tabVal);
+				const hasTabVal = !!(data && data.effectConfig && typeof data.effectConfig.tabVal !== 'undefined');
+				const visible = hasTabVal ? !!data.effectConfig.tabVal : true;
 				this.showTabBar = visible;
 				const pdHeight = data && data.topConfig && data.bottomConfig ? data.topConfig.val + data.bottomConfig.val : 30;
 				this.$emit('newDataStatus', visible, pdHeight);
@@ -174,24 +174,17 @@ export default {
 
 .modern-footer-inner {
 	position: relative;
-	height: 120rpx;
+	height: 96rpx;
 	display: flex;
 	align-items: flex-end;
 	justify-content: space-between;
 	gap: 12rpx;
-	padding: 14rpx 10rpx 18rpx;
-	border-radius: 28rpx;
+	padding: 10rpx 10rpx 12rpx;
+	border-radius: 32rpx;
 	overflow: visible;
-	background: rgba(255, 255, 255, 0.62);
-	border: 1rpx solid rgba(255, 255, 255, 0.45);
-	box-shadow: 0 16rpx 44rpx rgba(17, 17, 17, 0.12);
-}
-
-@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-	.modern-footer-inner {
-		-webkit-backdrop-filter: blur(18px);
-		backdrop-filter: blur(18px);
-	}
+	background: #CDEBCB;
+	border: 1rpx solid #B7DBB6;
+	box-shadow: 0 16rpx 36rpx rgba(96, 140, 96, 0.22);
 }
 
 .modern-footer-inner::before {
@@ -200,10 +193,10 @@ export default {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	height: 140rpx;
-	transform: translateY(20rpx);
+	height: 110rpx;
+	transform: translateY(12rpx);
 	border-radius: 32rpx;
-	background: linear-gradient(0deg, rgba(233, 51, 35, 0.22) 0%, rgba(255, 255, 255, 0.05) 70%, rgba(255, 255, 255, 0) 100%);
+	background: #DDF3DD;
 	pointer-events: none;
 }
 
@@ -213,30 +206,32 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	justify-content: flex-end;
-	gap: 6rpx;
+	gap: 4rpx;
 	padding: 8rpx 0;
 	min-width: 0;
 	transition: transform 220ms cubic-bezier(0.2, 0.85, 0.2, 1), color 220ms ease, opacity 220ms ease;
 }
 
 .nav-icon {
-	font-size: 44rpx;
+	font-size: 52rpx;
 	line-height: 1;
-	color: rgba(40, 40, 40, 0.72);
+	color: #000000;
 	transition: transform 220ms cubic-bezier(0.2, 0.85, 0.2, 1), color 220ms ease;
+	z-index: 2;
 }
 
 .nav-text {
 	font-size: 22rpx;
-	line-height: 28rpx;
-	color: rgba(40, 40, 40, 0.72);
+	line-height: 26rpx;
+	color: #000000;
 	transition: color 220ms ease, opacity 220ms ease;
 	white-space: nowrap;
+	z-index: 2;
 }
 
 .nav-item.active .nav-icon,
 .nav-item.active .nav-text {
-	color: var(--view-theme);
+	color: #000000;
 }
 
 .nav-item:active {
@@ -245,42 +240,29 @@ export default {
 
 .nav-item.center {
 	position: relative;
-	flex: 1.2;
+	flex: 1;
 	padding-top: 0;
-	justify-content: flex-start;
-	margin-top: -44rpx;
-}
-
-.center-bg {
-	position: absolute;
-	left: 50%;
-	top: 14rpx;
-	width: 180rpx;
-	height: 180rpx;
-	transform: translateX(-50%);
-	border-radius: 50%;
-	background: radial-gradient(circle at 50% 55%, rgba(233, 51, 35, 0.22) 0%, rgba(233, 51, 35, 0.12) 36%, rgba(233, 51, 35, 0) 70%);
-	pointer-events: none;
+	justify-content: flex-end;
 }
 
 .center-btn {
-	width: 112rpx;
-	height: 112rpx;
-	border-radius: 56rpx;
+	width: 64rpx;
+	height: 64rpx;
+	border-radius: 32rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: linear-gradient(135deg, #f73730 0%, #f86429 100%);
-	box-shadow: 0 20rpx 46rpx rgba(247, 55, 48, 0.28);
-	border: 2rpx solid rgba(255, 255, 255, 0.75);
+	background: #FFE3D6;
+	box-shadow: 0 14rpx 26rpx rgba(255, 108, 74, 0.28);
+	border: 2rpx solid #FFD4C4;
 	transform: translateY(0);
 	transition: transform 260ms cubic-bezier(0.2, 0.85, 0.2, 1), box-shadow 260ms ease, filter 260ms ease;
 }
 
 .center-icon {
-	font-size: 50rpx;
+	font-size: 40rpx;
 	line-height: 1;
-	color: rgba(255, 255, 255, 0.96);
+	color: #FF6A3D;
 }
 
 .nav-item.center:active .center-btn {
@@ -288,18 +270,14 @@ export default {
 	filter: brightness(0.98);
 }
 
-.nav-item.center.active .center-btn {
-	box-shadow: 0 24rpx 58rpx rgba(247, 55, 48, 0.36);
-}
-
 .nav-item.center .nav-text {
-	margin-top: 10rpx;
+	margin-top: 6rpx;
 	font-size: 22rpx;
-	color: rgba(40, 40, 40, 0.74);
+	color: #000000;
 }
 
 .nav-item.center.active .nav-text {
-	color: rgba(233, 51, 35, 0.96);
+	color: #000000;
 }
 
 .modern-footer-spacer {

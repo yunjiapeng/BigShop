@@ -10,14 +10,35 @@
 				</view>
 			</view>
 			<!-- #endif -->
+			<image class="home-logo" :src="logoSrc" @error="logoError" mode="widthFix" :style="{ width: logoWidth + 'rpx' }"></image>
 			<!-- 轮播搜索 -->
 			<homeComb v-if="showHomeComb" :dataConfig="homeCombData" :belongIndex="belongIndex" @bindSortId="bindSortId" :isScrolled="isScrolled" @storeTap="storeTap"></homeComb>
-			<!-- 顶部搜索框 -->
-			<headerSerch v-if="isHeaderSerch" :dataConfig="headerSerchCombData" :belongIndex="belongIndex" @storeTap="storeTap"></headerSerch>
-			<tabNav v-if="showCateNav" :dataConfig="cateNavData" @bindHeight="bindHeighta" @bindSortId="bindSortId" :isFixed="isFixed && !cateNavData.stickyConfig.tabVal"></tabNav>
+			<view class="notice-and-entrances">
+				<view class="notice-wrap" v-if="newsItem">
+					<news :dataConfig="newsItem"></news>
+				</view>
+				<view class="entrance-row">
+				<navigator url="/pages/annex/special/index?id=forest" hover-class="none" class="entrance-item">
+					<image class="entrance-icon-img" :src="classIcon1" mode="widthFix"></image>
+						<view class="entrance-text">森林班</view>
+					</navigator>
+				<navigator url="/pages/annex/special/index?id=international" hover-class="none" class="entrance-item">
+					<image class="entrance-icon-img" :src="classIcon2" mode="widthFix"></image>
+						<view class="entrance-text">国际班</view>
+					</navigator>
+				<navigator url="/pages/annex/special/index?id=parenting" hover-class="none" class="entrance-item">
+					<image class="entrance-icon-img" :src="classIcon3" mode="widthFix"></image>
+						<view class="entrance-text">亲子班</view>
+					</navigator>
+				<navigator url="/pages/annex/special/index?id=transfer" hover-class="none" class="entrance-item">
+					<image class="entrance-icon-img" :src="classIcon4" mode="widthFix"></image>
+						<view class="entrance-text">插班</view>
+					</navigator>
+				</view>
+			</view>
 			<view class="index">
 				<!-- 自定义样式 -->
-				<block v-for="(item, index) in styleConfig" :key="index">
+				<block v-for="(item, index) in filteredStyleConfig" :key="index">
 					<userInfor v-if="item.name == 'userInfor'" :dataConfig="item" @changeLogin="changeLogin"></userInfor>
 					<newVip v-if="item.name == 'newVip'" :dataConfig="item"></newVip>
 					<!-- 文章列表 -->
@@ -25,20 +46,13 @@
 					<bargain v-if="item.name == 'bargain'" :dataConfig="item" @changeBarg="changeBarg"></bargain>
 					<blankPage v-if="item.name == 'blankPage'" :dataConfig="item"></blankPage>
 					<combination v-if="item.name == 'combination'" :dataConfig="item"></combination>
-					<!-- 优惠券 -->
-					<coupon v-if="item.name == 'coupon'" :dataConfig="item" @changeLogin="changeLogin"></coupon>
 					<!-- 客户服务 -->
 					<customerService v-if="item.name == 'customerService'" :dataConfig="item"></customerService>
-					<!-- 商品列表 -->
-					<goodList ref="goodLists" v-if="item.name == 'goodList'" :dataConfig="item"></goodList>
 					<guide v-if="item.name == 'guide'" :dataConfig="item"></guide>
 					<!-- 直播模块 -->
 					<!-- #ifdef  MP-WEIXIN -->
 					<liveBroadcast v-if="item.name == 'liveBroadcast'" :dataConfig="item"></liveBroadcast>
 					<!-- #endif -->
-					<menus v-if="item.name == 'menus'" :dataConfig="item"></menus>
-					<!-- 实时消息 -->
-					<news v-if="item.name == 'news'" :dataConfig="item"></news>
 					<!-- 图片库 -->
 					<pictureCube v-if="item.name == 'pictureCube'" :dataConfig="item"></pictureCube>
 					<!-- 促销列表 -->
@@ -64,50 +78,21 @@
 					<richText v-if="item.name == 'richText'" :dataConfig="item"></richText>
 					<videos v-if="item.name == 'videos'" :dataConfig="item"></videos>
 					<!-- #endif -->
-					<signIn v-if="item.name == 'signIn'" :dataConfig="item"></signIn>
 					<hotspot v-if="item.name == 'hotspot'" :dataConfig="item"></hotspot>
 					<follow v-if="item.name == 'follow'" :dataConfig="item"></follow>
 				</block>
-				<!-- 分类商品模块 -->
-				<!-- #ifndef  APP-PLUS -->
-				<view class="sort-product px-20" v-if="!styleConfig.length">
-					<!-- #endif -->
-					<!-- #ifdef  APP-PLUS -->
-					<!-- 商品排序 -->
-					<view class="sort-product px-20" :style="{ marginTop: sortMpTop + 'px' }" v-if="!styleConfig.length">
-						<!-- #endif -->
-						<view class="rd-24rpx bg--w111-fff p-24 mb-24" v-if="sortList.children && sortList.children.length">
-							<scroll-view scroll-x="true" class="white-nowrap vertical-middle w-full" show-scrollbar="false">
-								<view class="inline-block mr-24" v-for="(item, index) in sortList.children" :key="index">
-									<view class="flex-col flex-center" @tap="changeSort(item, index)">
-										<view class="picture w-90 h-90 rd-50-p111-" :class="{ select: curSort == index }">
-											<image :src="item.pic" class="w-full h-full rd-50-p111-"></image>
-										</view>
-										<text class="fs-24 pt-14" :class="{ 'font-num': curSort == index }">{{ item.cate_name }}</text>
-									</view>
-								</view>
-							</scroll-view>
-						</view>
-						<waterfallsFlow ref="waterfallsFlow" :wfList="goodList" :goDetail="'goDetail'" @itemTap="goDetail"></waterfallsFlow>
-						<Loading :loaded="loaded" :loading="loading"></Loading>
-						<view v-if="goodList.length == 0 && loaded">
-							<emptyPage title="暂无商品，去看点别的吧～"></emptyPage>
-						</view>
-					</view>
-					<couponWindow :window="isCouponShow" @onColse="couponClose" :couponImage="couponObj.image" :couponList="couponObj.list"></couponWindow>
-					<view class="">
-						{{ site_config }}
-					</view>
-					<!-- #ifndef APP-PLUS -->
-					<view v-if="configData && configData.record_No" class="site-config" @click="goICP(configData.icp_url)">{{ configData.record_No }}</view>
-					<view class="site-config" v-if="configData && configData.network_security" @click="goICP(configData.network_security_url)">
-						<image class="ban" src="/static/images/beian.png" alt="" srcset="" />
-						{{ configData.network_security }}
-					</view>
-					<!-- #endif -->
-					<view class="pb-safe" :style="[pdHeights]" v-if="isFooter"></view>
-					<pageFooter :configData="footerConfigData" @newDataStatus="newDataStatus"></pageFooter>
+				<view class="">
+					{{ site_config }}
 				</view>
+				<!-- #ifndef APP-PLUS -->
+				<view v-if="configData && configData.record_No" class="site-config" @click="goICP(configData.icp_url)">{{ configData.record_No }}</view>
+				<view class="site-config" v-if="configData && configData.network_security" @click="goICP(configData.network_security_url)">
+					<image class="ban" src="/static/images/beian.png" alt="" srcset="" />
+					{{ configData.network_security }}
+				</view>
+				<!-- #endif -->
+				<view class="pb-safe" :style="[pdHeights]" v-if="isFooter"></view>
+				<pageFooter :configData="footerConfigData" @newDataStatus="newDataStatus"></pageFooter>
 			</view>
 			<!-- #ifdef APP -->
 			<app-update ref="appUpdate" :force="true" :tabbar="false"></app-update>
@@ -132,6 +117,11 @@
 <script>
 const app = getApp();
 import colors from '@/mixins/color';
+import logoPng from '@/logo/logo.png';
+import classIcon1 from '@/logo/class_1.png';
+import classIcon2 from '@/logo/class_2.png';
+import classIcon3 from '@/logo/class_3.png';
+import classIcon4 from '@/logo/class_4.png';
 import couponWindow from '@/components/couponWindow/index';
 import { getCouponV2, getCouponNewUser, getCrmebCopyRight } from '@/api/api.js';
 import { getShare } from '@/api/public.js';
@@ -208,6 +198,12 @@ export default {
 				height: this.isFooter ? H : '100rpx'
 			};
 		},
+		newsItem() {
+			return (this.styleConfig || []).find((item) => item.name === 'news');
+		},
+		filteredStyleConfig() {
+			return (this.styleConfig || []).filter((item) => item.name !== 'news');
+		},
 		...mapGetters(['isLogin', 'uid', 'cartNum'])
 	},
 	mixins: [colors],
@@ -255,6 +251,13 @@ export default {
 	},
 	data() {
 		return {
+			logoSrc: logoPng,
+			classIcon1,
+			classIcon2,
+			classIcon3,
+			classIcon4,
+			logoTry: 0,
+			logoWidth: 250,
 			styleConfig: [],
 			loading: false,
 			loadend: false,
@@ -324,6 +327,11 @@ export default {
 	},
 	onLoad(options) {
 		let that = this;
+		uni.getSystemInfo({
+			success: function (res) {
+				that.logoWidth = 250;
+			}
+		});
 		uni.hideTabBar();
 		that.getOptions(options);
 		this.$nextTick(function () {
@@ -410,6 +418,14 @@ export default {
 		uni.stopPullDownRefresh();
 	},
 	methods: {
+		logoError() {
+			this.logoTry += 1;
+			if (this.logoTry === 1) {
+				this.logoSrc = '/logo/logo.png';
+			} else if (this.logoTry === 2) {
+				this.logoSrc = '../../logo/logo.png';
+			}
+		},
 		...mapMutations(['SET_AUTOPLAY', 'SET_NEARBY']),
 		checkMyApplet() {
 			wx.checkIsAddedToMyMiniProgram({
@@ -954,6 +970,55 @@ export default {
 
 .noRepeat {
 	background-repeat: no-repeat;
+}
+
+.home-logo {
+	position: fixed;
+	top: calc(env(safe-area-inset-top) + 6rpx);
+	left: 16rpx;
+	height: auto;
+	z-index: 2001;
+	pointer-events: none;
+}
+
+.notice-and-entrances {
+	position: relative;
+	z-index: 3;
+	padding: 12rpx 20rpx 0;
+}
+
+.notice-wrap {
+	margin-bottom: 12rpx;
+}
+
+.entrance-row {
+	display: flex;
+	justify-content: space-between;
+	gap: 12rpx;
+	margin-top: 16rpx;
+}
+
+.entrance-item {
+	flex: 1;
+	background: #FFFFFF;
+	border-radius: 20rpx;
+	padding: 14rpx 0 12rpx;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	box-shadow: 0 10rpx 20rpx rgba(0, 0, 0, 0.08);
+}
+
+.entrance-icon-img {
+	width: 64rpx;
+	height: 64rpx;
+	border-radius: 16rpx;
+}
+
+.entrance-text {
+	margin-top: 10rpx;
+	font-size: 24rpx;
+	color: #000000;
 }
 
 .error-network {

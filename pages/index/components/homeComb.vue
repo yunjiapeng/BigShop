@@ -4,84 +4,6 @@
 			<image :class="{ active: index == swiperCur }" v-for="(i, index) in imgUrls" :src="i.img"></image>
 		</view>
 		<view class="bag-gradient" :style="[bgGradientStyle]"></view>
-		<!--搜索-->
-		<view class="my-main">
-			<view class="mp-header" id="home" :style="[mpHeaderStyle]">
-				<view class="sys-head" :style="{ height: statusBarHeight + 'px' }" v-if="!special"></view>
-				<view class="serch-box">
-					<view class="serch-wrapper flex" :class="special ? 'on' : ''">
-						<view class="title skeleton-rect" :style="[titleStyle]" v-if="searchBox == 0">{{ titleConfig }}</view>
-						<view class="logo skeleton-rect" v-if="searchBox == 1">
-							<image :src="logoUpImg" mode="heightFix"></image>
-						</view>
-						<navigator
-							v-if="hotWords.length"
-							:url="'/pages/goods/goods_search/index?searchVal=' + searchVal"
-							:class="logoConfig ? 'input' : 'uninput'"
-							hover-class="none"
-							class="skeleton-rect"
-							:style="[inputStyle]"
-						>
-							<view class="swiperTxt">
-								<swiper :indicator-dots="indicatorDots" :autoplay="autoplay" :interval="interval" :duration="duration" vertical="true" circular="true" @change="textChange">
-									<block v-for="(item, index) in hotWords" :key="index">
-										<swiper-item catchtouchmove="catchTouchMove">
-											<view class="acea-row row-between-wrapper">
-												<view class="text acea-row row-between-wrapper">
-													<view class="newsTitle line1">{{ item.val }}</view>
-												</view>
-											</view>
-										</swiper-item>
-									</block>
-								</swiper>
-							</view>
-							<text class="iconfont icon-ic_search"></text>
-						</navigator>
-						<navigator v-else url="/pages/goods/goods_search/index" hover-class="none" class="skeleton-rect input" :style="[inputStyle]">
-							{{ dataConfig.inputConfig.value }}
-							<text class="iconfont icon-ic_search"></text>
-						</navigator>
-					</view>
-				</view>
-			</view>
-			<view :style="'height:' + (statusBarHeight + 43) + 'px'" v-if="!special && searchShow"></view>
-			<view v-if="!dataConfig.classConfig.tabVal" class="navTabBox tabNav">
-				<view class="longTab" :style="{ width: `${mainWidth}px` }">
-					<scroll-view scroll-x="true" scroll-with-animation :scroll-left="tabLeft" show-scrollbar="true">
-						<view
-							class="longItem"
-							v-for="(item, index) in tabListConfig"
-							:key="index"
-							:class="{ click: index == tabClick }"
-							:id="'id' + index"
-							:data-index="index"
-							@click="changeTab(item, index)"
-						>
-							{{ item.text.val }}
-						</view>
-					</scroll-view>
-				</view>
-				<view class="category" @click="showCategory">
-					<text class="iconfont icon-a-ic_Imageandtextsorting" :style="'color:' + (isScrolled ? txtColor : '#fff')"></text>
-				</view>
-			</view>
-			<view v-if="isCategory" class="category_count">
-				<view class="sys-head tui-skeleton" :style="{ height: statusBarHeight + 'px' }" v-if="!special"></view>
-				<view class="fs-28">精选类目</view>
-				<view class="cate_count grid-column-4 grid-gap-16rpx mt-32">
-					<view
-						class="category_item"
-						:style="[index === tabClick ? classColor : '']"
-						@click="changeTab(item, index)"
-						v-for="(item, index) in tabListConfig"
-						:key="index"
-						:id="'ids' + index"
-					>
-						{{ item.text.val }}
-					</view>
-				</view>
-			</view>
-		</view>
 		<view class="swiperBg" :style="{ paddingBottom: isMenu ? '20rpx' : '20rpx' }">
 			<view class="swiper page_swiper" v-if="imgUrls.length">
 				<swiper
@@ -135,7 +57,6 @@
 				</view>
 			</view>
 		</view>
-		<view v-if="isCategory" class="mask" @click="isCategory = false"></view>
 	</view>
 </template>
 
@@ -743,7 +664,7 @@ export default {
 		padding: 5rpx 10rpx 0;
 
 		uni-swiper {
-			height: 320rpx;
+			height: 750rpx;
 		}
 
 		swiper-item {
