@@ -57,6 +57,13 @@
 				"navigationStyle": "custom",
 				"navigationBarTextStyle": "white"
 			}
+		},
+		{
+			"path": "pages/course/booking/index",
+			"style": {
+				"navigationBarTitleText": "购买课程",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 	"subPackages": [{
@@ -849,12 +856,7 @@
 						"titleNView": {
 							"padding-left": "10px",
 							"padding-right": "10px",
-							"type": "transparent",
-							"buttons": [ 
-								{
-									"type": "menu" 
-								}
-							]
+							"type": "transparent"
 						}
 					}
 				}

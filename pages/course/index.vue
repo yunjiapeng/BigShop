@@ -17,15 +17,14 @@
 		<swiper class="content-swiper" :current="currentTab" @change="onSwiperChange">
 			<swiper-item>
 				<scroll-view class="pane" scroll-y="true">
-					<view class="section">
-						<view class="section-title">{{ courseCategoryTitle || '课程分类' }}</view>
+					<view v-for="group in courseGroups" :key="group.key" class="section">
+						<view class="section-title">{{ group.title }}</view>
 						<view class="course-list">
-							<view v-for="item in courseList" :key="item.id" class="course-card" @click="viewCourse(item)">
+							<view v-for="item in group.items" :key="item.id" class="course-card" @click="viewCourse(item)">
 								<image class="course-card-bg" :src="item.recommend_image || item.image" mode="aspectFill"></image>
 								<view class="course-card-scrim"></view>
 								<view class="course-card-info">
-									<view class="course-card-title">{{ getMainTitle(item.store_name) }}</view>
-									<view class="course-card-subtitle">{{ getSubtitle(item.store_name) }}</view>
+									<view class="course-card-title">{{ item.store_name }}</view>
 								</view>
 							</view>
 						</view>
@@ -36,38 +35,49 @@
 			<swiper-item>
 				<scroll-view class="pane" scroll-y="true">
 					<view class="section">
-						<view class="hero-card" @click="tapAction('正式课程')">
-							<image class="hero-card-bg" :src="officialCover" mode="aspectFill"></image>
-							<view class="hero-card-scrim"></view>
-							<view class="hero-card-top">
-								<view class="hero-card-title">正式课程</view>
-								<view class="hero-card-desc">课程体系化学习 · 目标明确 · 进度可追踪</view>
+						<view class="section-title">班级动态</view>
+						<emptyPage v-if="!isLogin" :title="$t(`请先登录查看班级动态`)"></emptyPage>
+						<view v-else>
+							<view class="filter-card">
+								<view class="filter-label">我的班级</view>
+								<scroll-view class="chip-row" scroll-x="true">
+									<view
+										v-for="cls in classList"
+										:key="getClassKey(cls)"
+										class="chip"
+										:class="{ active: isClassActive(cls) }"
+										@click="selectClass(cls)"
+									>
+										<view class="chip-text">{{ getClassName(cls) }}</view>
+									</view>
+									<view v-if="!classLoading && !classList.length" class="chip-empty">暂无班级</view>
+								</scroll-view>
+								<view class="filter-label">我的孩子</view>
+								<scroll-view class="chip-row" scroll-x="true">
+									<view
+										v-for="child in children"
+										:key="child.child_uid"
+										class="chip"
+										:class="{ active: Number(child.child_uid) === Number(selectedChildId) }"
+										@click="selectChild(child)"
+									>
+										<view class="chip-text">{{ child.child_name }}</view>
+									</view>
+									<view v-if="!childLoading && !children.length" class="chip-empty">暂无孩子</view>
+								</scroll-view>
 							</view>
-							<view class="hero-card-bottom">
-								<view class="hero-chip">体系</view>
-								<view class="hero-chip">进度</view>
-								<view class="hero-chip">作业</view>
-								<view class="hero-chip">资料</view>
-							</view>
-						</view>
-
-						<view class="quick-actions">
-							<view v-for="b in actionButtons" :key="b" class="quick-action" @click="tapAction(b)">
-								<view class="quick-action-text">{{ b }}</view>
-							</view>
-						</view>
-
-						<view class="waterfall">
-							<view class="wf-col">
-								<view v-for="(img, idx) in officialWaterfallLeft" :key="'l-' + idx" class="wf-item">
-									<image class="wf-img" :src="img" mode="aspectFill"></image>
+							<view class="gallery-grid" v-if="galleryList.length">
+								<view
+									v-for="(item, idx) in galleryList"
+									:key="item.id || idx"
+									class="gallery-item"
+									@click="previewGallery(idx)"
+								>
+									<image class="gallery-img" :src="item.pic_url" mode="aspectFill"></image>
+									<view v-if="formatGalleryTime(item)" class="gallery-time">{{ formatGalleryTime(item) }}</view>
 								</view>
 							</view>
-							<view class="wf-col">
-								<view v-for="(img, idx) in officialWaterfallRight" :key="'r-' + idx" class="wf-item">
-									<image class="wf-img" :src="img" mode="aspectFill"></image>
-								</view>
-							</view>
+							<emptyPage v-else-if="showGalleryEmpty" :title="$t(`暂无班级动态`)"></emptyPage>
 						</view>
 					</view>
 				</scroll-view>
@@ -119,47 +129,110 @@
 
 <script>
 import { getCategoryList, getProductslist } from '@/api/store.js';
+import { getChildrenList, getMyClasses, getChildGallery } from '@/api/user.js';
 import pageFooter from '@/components/pageFooter/index.vue';
+import emptyPage from '@/components/emptyPage.vue';
+import { mapGetters } from 'vuex';
 
 export default {
 	components: {
-		pageFooter
+		pageFooter,
+		emptyPage
 	},
 	data() {
 		return {
 			tabs: [
-				{ key: 'select', title: '选课' },
-				{ key: 'official', title: '正式课程' },
+				{ key: 'select', title: '购买课程' },
+				{ key: 'official', title: '班级动态' },
 				{ key: 'camp', title: '主题营' }
 			],
 			currentTab: 0,
 			courseCategoryTitle: '',
 			courseCid: 0,
 			courseList: [],
+			classList: [],
+			classLoading: false,
+			children: [],
+			childLoading: false,
+			selectedClassId: '',
+			selectedChildId: '',
+			galleryList: [],
+			galleryPage: 1,
+			galleryLimit: 200,
+			galleryCount: 0,
+			galleryLoading: false,
+			courseGroupConfig: [
+				{ key: 'regular', title: '平时课程', ids: [17, 15] },
+				{ key: 'winter', title: '寒假课程', ids: [10, 9] },
+				{ key: 'summer', title: '暑假课程', ids: [13, 11] }
+			],
+			courseIdMeta: {
+				17: { store_name: '平日 - 国际班' },
+				15: { store_name: '平日 - 森林班' },
+				13: { store_name: '暑假 - 国际班' },
+				11: { store_name: '暑假 - 森林班' },
+				10: { store_name: '寒假 - 森林班' },
+				9: { store_name: '寒假 - 国际班' }
+			},
 			officialCover: '',
 			campCover: '',
 			actionButtons: ['课程介绍', '课程表', '作业', '资料'],
-			officialWaterfall: [],
 			campWaterfall: []
 		};
 	},
 	computed: {
-		officialWaterfallLeft() {
-			return this.officialWaterfall.filter((_, idx) => idx % 2 === 0);
-		},
-		officialWaterfallRight() {
-			return this.officialWaterfall.filter((_, idx) => idx % 2 === 1);
+		...mapGetters(['isLogin']),
+		courseGroups() {
+			const list = Array.isArray(this.courseList) ? this.courseList : [];
+			return this.courseGroupConfig.map((group) => {
+				const items = group.ids
+					.map((id) => {
+						const found = list.find((item) => Number(item.id) === Number(id));
+						if (found) return found;
+						const meta = this.courseIdMeta[id] || {};
+						return {
+							id,
+							store_name: meta.store_name || `课程-${id}`,
+							image: meta.image || this.officialCover,
+							recommend_image: meta.recommend_image || this.campCover
+						};
+					})
+					.filter(Boolean);
+				return {
+					key: group.key,
+					title: group.title,
+					items
+				};
+			});
 		},
 		campWaterfallLeft() {
 			return this.campWaterfall.filter((_, idx) => idx % 2 === 0);
 		},
 		campWaterfallRight() {
 			return this.campWaterfall.filter((_, idx) => idx % 2 === 1);
+		},
+		showGalleryEmpty() {
+			return (
+				this.isLogin &&
+				!this.galleryLoading &&
+				this.classList.length &&
+				this.children.length &&
+				!this.galleryList.length
+			);
+		}
+	},
+	watch: {
+		isLogin: {
+			handler(val) {
+				if (val) this.loadClassDynamic();
+			},
+			deep: true
 		}
 	},
 	onLoad() {
 		this.initUiData();
 		this.loadCategoriesAndCourses();
+		if (this.isLogin) this.loadClassDynamic();
 	},
 	methods: {
 		initUiData() {
@@ -167,7 +240,7 @@ export default {
 				'https://saas-1375106378.cos.ap-shanghai.myqcloud.com/attach/2026/02/ec37d202602071627534044.jpg?imageMogr2/thumbnail/800x800';
 			this.officialCover = fallbackCover;
 			this.campCover = 'https://saas-1375106378.cos.ap-shanghai.myqcloud.com/attach/2026/02/bf19c202602071647134864.jpg?imageMogr2/thumbnail/800x800';
-			this.officialWaterfall = [
+			const fallbackList = [
 				fallbackCover,
 				this.campCover,
 				'https://saas-1375106378.cos.ap-shanghai.myqcloud.com/attach/2026/02/ec37d202602071627534044.jpg?imageMogr2/thumbnail/700x700',
@@ -175,7 +248,113 @@ export default {
 				'https://saas-1375106378.cos.ap-shanghai.myqcloud.com/attach/2026/02/ec37d202602071627534044.jpg?imageMogr2/thumbnail/600x600',
 				'https://saas-1375106378.cos.ap-shanghai.myqcloud.com/attach/2026/02/bf19c202602071647134864.jpg?imageMogr2/thumbnail/600x600'
 			];
-			this.campWaterfall = [...this.officialWaterfall].reverse();
+			this.campWaterfall = [...fallbackList].reverse();
+		},
+		async loadClassDynamic() {
+			await Promise.all([this.loadClassList(), this.loadChildrenList()]);
+			this.tryLoadGallery(true);
+		},
+		async loadClassList() {
+			this.classLoading = true;
+			try {
+				const res = await getMyClasses();
+				const data = (res && res.data) || {};
+				const list = Array.isArray(data.list) ? data.list : Array.isArray(data) ? data : [];
+				this.classList = list;
+				if (!this.selectedClassId && list.length) {
+					this.selectedClassId = this.getClassKey(list[0]);
+				}
+			} catch (e) {
+				this.classList = [];
+			}
+			this.classLoading = false;
+		},
+		async loadChildrenList() {
+			this.childLoading = true;
+			try {
+				const res = await getChildrenList();
+				this.children = (res && res.data && res.data.list) || [];
+				if (!this.selectedChildId && this.children.length) {
+					this.selectedChildId = this.children[0].child_uid;
+				}
+			} catch (e) {
+				this.children = [];
+			}
+			this.childLoading = false;
+		},
+		getClassKey(item) {
+			if (!item) return '';
+			return item.class_id || item.classid || item.id || '';
+		},
+		getClassName(item) {
+			if (!item) return '';
+			return item.class_name || item.name || item.title || `班级${this.getClassKey(item)}`;
+		},
+		isClassActive(item) {
+			return Number(this.getClassKey(item)) === Number(this.selectedClassId);
+		},
+		selectClass(item) {
+			const id = this.getClassKey(item);
+			if (!id || Number(id) === Number(this.selectedClassId)) return;
+			this.selectedClassId = id;
+			this.tryLoadGallery(true);
+		},
+		selectChild(item) {
+			if (!item || !item.child_uid || Number(item.child_uid) === Number(this.selectedChildId)) return;
+			this.selectedChildId = item.child_uid;
+			this.tryLoadGallery(true);
+		},
+		tryLoadGallery(reset) {
+			if (!this.selectedChildId || !this.selectedClassId) {
+				if (reset) this.galleryList = [];
+				return;
+			}
+			this.loadGallery(reset);
+		},
+		async loadGallery(reset) {
+			if (this.galleryLoading) return;
+			this.galleryLoading = true;
+			if (reset) this.galleryPage = 1;
+			try {
+				const res = await getChildGallery({
+					child_uid: this.selectedChildId,
+					class_id: this.selectedClassId,
+					page: this.galleryPage,
+					limit: this.galleryLimit
+				});
+				const data = (res && res.data) || {};
+				const list = Array.isArray(data.list) ? data.list : Array.isArray(data) ? data : [];
+				this.galleryList = reset ? list : this.galleryList.concat(list);
+				this.galleryCount = data.count || this.galleryList.length;
+			} catch (e) {
+				if (reset) this.galleryList = [];
+			}
+			this.galleryLoading = false;
+		},
+		formatGalleryTime(item) {
+			if (!item) return '';
+			const raw = item.upload_time || item.created_at;
+			if (!raw) return '';
+			const num = Number(raw);
+			let date;
+			if (Number.isNaN(num)) {
+				date = new Date(raw);
+			} else {
+				date = new Date(num > 1000000000000 ? num : num * 1000);
+			}
+			if (Number.isNaN(date.getTime())) return '';
+			const y = date.getFullYear();
+			const m = `${date.getMonth() + 1}`.padStart(2, '0');
+			const d = `${date.getDate()}`.padStart(2, '0');
+			return `${y}-${m}-${d}`;
+		},
+		previewGallery(idx) {
+			const urls = this.galleryList.map((item) => item.pic_url).filter(Boolean);
+			if (!urls.length) return;
+			uni.previewImage({
+				current: urls[idx] || urls[0],
+				urls
+			});
 		},
 		async loadCategoriesAndCourses() {
 			try {
@@ -403,23 +582,10 @@ export default {
 	font-family: SemiBold;
 	font-size: 34rpx;
 	line-height: 42rpx;
-	color: rgba(17, 59, 46, 0.94);
+	color: #000000;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	text-shadow: 0 6rpx 14rpx rgba(246, 251, 247, 0.9);
-}
-
-.course-card-subtitle {
-	margin-top: 10rpx;
-	font-family: Regular;
-	font-size: 24rpx;
-	line-height: 30rpx;
-	color: rgba(17, 59, 46, 0.68);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	text-shadow: 0 6rpx 14rpx rgba(246, 251, 247, 0.85);
 }
 
 .course-card:active {
@@ -561,5 +727,86 @@ export default {
 
 .wf-col .wf-item:nth-child(3n) .wf-img {
 	height: 300rpx;
+}
+
+.filter-card {
+	padding: 18rpx;
+	border-radius: 22rpx;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1rpx solid rgba(17, 59, 46, 0.08);
+}
+
+.filter-label {
+	font-family: SemiBold;
+	font-size: 26rpx;
+	letter-spacing: 1rpx;
+	color: rgba(17, 59, 46, 0.78);
+	margin: 6rpx 0 12rpx;
+}
+
+.chip-row {
+	display: flex;
+	gap: 12rpx;
+	white-space: nowrap;
+	margin-bottom: 18rpx;
+}
+
+.chip {
+	padding: 0 20rpx;
+	height: 64rpx;
+	border-radius: 999rpx;
+	background: rgba(246, 251, 247, 0.9);
+	border: 1rpx solid rgba(17, 59, 46, 0.12);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.chip.active {
+	background: rgba(86, 197, 150, 0.16);
+	border-color: rgba(86, 197, 150, 0.5);
+}
+
+.chip-text {
+	font-size: 24rpx;
+	letter-spacing: 1rpx;
+	color: rgba(17, 59, 46, 0.78);
+}
+
+.chip-empty {
+	font-size: 24rpx;
+	color: rgba(17, 59, 46, 0.5);
+	padding: 8rpx 0;
+}
+
+.gallery-grid {
+	margin-top: 18rpx;
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16rpx;
+}
+
+.gallery-item {
+	position: relative;
+	border-radius: 20rpx;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1rpx solid rgba(17, 59, 46, 0.08);
+}
+
+.gallery-img {
+	width: 100%;
+	height: 320rpx;
+}
+
+.gallery-time {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	padding: 12rpx 16rpx;
+	font-size: 22rpx;
+	color: #ffffff;
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.45) 100%);
 }
 </style>

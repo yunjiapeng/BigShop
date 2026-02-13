@@ -137,6 +137,7 @@
 				});
 				orderPay({
 					uni: that.order_id,
+					order_id: that.order_id,
 					paytype: paytype,
 					type: that.friendPay ? 1 : 0,
 					// #ifdef MP 

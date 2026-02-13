@@ -36,7 +36,6 @@
 		</view>
 		<view v-show="false" v-html="formContent"></view>
 	</view>
-	</view>
 </template>
 
 <script>
@@ -257,6 +256,22 @@
 					tempform.submit();
 				})
 			},
+			getCourseBackfillKey(orderId) {
+				return `course_order_backfill_${orderId}`;
+			},
+			getCourseBackfillData() {
+				const raw = uni.getStorageSync(this.getCourseBackfillKey(this.orderId));
+				if (!raw) return {};
+				try {
+					const data = JSON.parse(raw);
+					if (!data || typeof data !== 'object') return {};
+					const copy = { ...data };
+					if (copy.bigclass_child_uids) delete copy.bigclass_child_uids;
+					return copy;
+				} catch (e) {
+					return {};
+				}
+			},
 			waitPay() {
 				uni.reLaunch({
 					url: '/pages/goods/order_pay_status/index?order_id=' + this.orderId + '&msg=取消支付&type=3' +
@@ -284,16 +299,19 @@
 						complete: () => {}
 					});
 				}
+				const courseParams = this.getCourseBackfillData();
 				orderPay({
 					uni: that.orderId,
+					order_id: that.orderId,
 					paytype: paytype,
 					type: that.friendPay ? 1 : 0,
+					...courseParams,
 					// #ifdef H5
 					quitUrl: location.port ? location.protocol + '//' + location.hostname + ':' + location
 						.port +
 						'/pages/goods/order_details/index?order_id=' + this.orderId : location.protocol +
 						'//' + location.hostname +
-						'/pages/goods/order_details/index?order_id=' + this.orderId
+						'/pages/goods/order_details/index?order_id=' + this.orderId,
 					// #endif
 					// #ifdef APP-PLUS
 					quitUrl: '/pages/goods/order_details/index?order_id=' + this.orderId

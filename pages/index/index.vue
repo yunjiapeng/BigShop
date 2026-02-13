@@ -10,7 +10,7 @@
 				</view>
 			</view>
 			<!-- #endif -->
-			<image class="home-logo" :src="logoSrc" @error="logoError" mode="widthFix" :style="{ width: logoWidth + 'rpx' }"></image>
+			<image class="home-logo" :src="logoSrc" @error="logoError" mode="widthFix" :style="{ width: logoWidth + 'px' }"></image>
 			<!-- 轮播搜索 -->
 			<homeComb v-if="showHomeComb" :dataConfig="homeCombData" :belongIndex="belongIndex" @bindSortId="bindSortId" :isScrolled="isScrolled" @storeTap="storeTap"></homeComb>
 			<view class="notice-and-entrances">
@@ -18,22 +18,25 @@
 					<news :dataConfig="newsItem"></news>
 				</view>
 				<view class="entrance-row">
-				<navigator url="/pages/annex/special/index?id=forest" hover-class="none" class="entrance-item">
-					<image class="entrance-icon-img" :src="classIcon1" mode="widthFix"></image>
-						<view class="entrance-text">森林班</view>
-					</navigator>
-				<navigator url="/pages/annex/special/index?id=international" hover-class="none" class="entrance-item">
-					<image class="entrance-icon-img" :src="classIcon2" mode="widthFix"></image>
-						<view class="entrance-text">国际班</view>
-					</navigator>
-				<navigator url="/pages/annex/special/index?id=parenting" hover-class="none" class="entrance-item">
-					<image class="entrance-icon-img" :src="classIcon3" mode="widthFix"></image>
-						<view class="entrance-text">亲子班</view>
-					</navigator>
-				<navigator url="/pages/annex/special/index?id=transfer" hover-class="none" class="entrance-item">
-					<image class="entrance-icon-img" :src="classIcon4" mode="widthFix"></image>
-						<view class="entrance-text">插班</view>
-					</navigator>
+					<view class="entrance-item" @click="openModuleArticle(3)">
+						<image class="entrance-icon-img" :src="classIcon1" mode="widthFix"></image>
+						<view class="entrance-text">课程介绍</view>
+					</view>
+					<view class="entrance-item" @click="openModuleArticle(4)">
+						<image class="entrance-icon-img" :src="classIcon2" mode="widthFix"></image>
+						<view class="entrance-text">教育理念</view>
+					</view>
+					<view class="entrance-item" @click="openModuleArticle(5)">
+						<image class="entrance-icon-img" :src="classIcon3" mode="widthFix"></image>
+						<view class="entrance-text">师资团队</view>
+					</view>
+					<view class="entrance-item" @click="openModuleArticle(6)">
+						<image class="entrance-icon-img" :src="classIcon4" mode="widthFix"></image>
+						<view class="entrance-text">创始人故事</view>
+					</view>
+				</view>
+				<view class="virtual-card" @click="openVirtual" :style="{ backgroundImage: 'url(/picture720/p_1.jpg)' }">
+					<view class="virtual-title">虚拟导览</view>
 				</view>
 			</view>
 			<view class="index">
@@ -41,8 +44,9 @@
 				<block v-for="(item, index) in filteredStyleConfig" :key="index">
 					<userInfor v-if="item.name == 'userInfor'" :dataConfig="item" @changeLogin="changeLogin"></userInfor>
 					<newVip v-if="item.name == 'newVip'" :dataConfig="item"></newVip>
-					<!-- 文章列表 -->
-					<articleList v-if="item.name == 'articleList'" :dataConfig="item"></articleList>
+					<view v-if="item.name == 'articleList'" class="modal-target">
+						<articleList :dataConfig="item" :disableNavigate="true" :excludeIds="homepageExcludeIds" @open="openArticleModal"></articleList>
+					</view>
 					<bargain v-if="item.name == 'bargain'" :dataConfig="item" @changeBarg="changeBarg"></bargain>
 					<blankPage v-if="item.name == 'blankPage'" :dataConfig="item"></blankPage>
 					<combination v-if="item.name == 'combination'" :dataConfig="item"></combination>
@@ -81,7 +85,7 @@
 					<hotspot v-if="item.name == 'hotspot'" :dataConfig="item"></hotspot>
 					<follow v-if="item.name == 'follow'" :dataConfig="item"></follow>
 				</block>
-				<view class="">
+				<view class="site-config-placeholder">
 					{{ site_config }}
 				</view>
 				<!-- #ifndef APP-PLUS -->
@@ -93,6 +97,48 @@
 				<!-- #endif -->
 				<view class="pb-safe" :style="[pdHeights]" v-if="isFooter"></view>
 				<pageFooter :configData="footerConfigData" @newDataStatus="newDataStatus"></pageFooter>
+				<view v-show="modalVisible" class="modal-mask" :class="{ 'modal-mask-show': modalActive }" @click="closeModal" @touchmove.stop.prevent>
+					<view class="modal-panel" :class="{ 'modal-panel-show': modalActive }" @click.stop>
+						<view class="modal-header">
+							<view class="modal-title">{{ modalTitle }}</view>
+							<text class="modal-close" @click="closeModal">×</text>
+						</view>
+						<view class="modal-body">
+							<view v-if="modalType === 'virtual'">
+								<swiper class="pano-swiper" :current="panoIndex" :circular="true" :duration="400" @change="panoChange">
+									<swiper-item v-for="(src, idx) in panoList" :key="idx">
+										<image class="pano-image" :src="src" mode="aspectFill"></image>
+									</swiper-item>
+								</swiper>
+								<view class="pano-indicator" v-if="panoList.length">{{ panoIndex + 1 }} / {{ panoList.length }}</view>
+							</view>
+							<view v-else-if="modalType === 'news' && newsItem" class="modal-section">
+								<news :dataConfig="newsItem"></news>
+							</view>
+							<view v-else-if="modalType === 'article'" class="modal-section">
+								<view v-if="articleLoading" class="modal-text">加载中...</view>
+								<view v-else-if="articleDetail" class="article-detail">
+									<view class="article-title">{{ articleDetail.title }}</view>
+									<view class="article-meta">
+										<view class="article-label">{{ articleDetail.catename }}</view>
+										<view class="article-meta-item">{{ articleDetail.add_time }}</view>
+										<view class="article-meta-item"><text class="iconfont icon-liulan"></text>{{ articleDetail.visit }}</view>
+									</view>
+									<view class="article-content" v-if="articleDescription">
+										<!-- #ifndef APP-PLUS -->
+										<parser :html="articleDescription" :tag-style="articleTagStyle"></parser>
+										<!-- #endif -->
+										<!-- #ifdef APP-PLUS -->
+										<view v-html="articleDescription"></view>
+										<!-- #endif -->
+									</view>
+								</view>
+								<view v-else class="modal-text">暂无内容</view>
+							</view>
+							<view v-else class="modal-text">{{ modalTitle }}</view>
+						</view>
+					</view>
+				</view>
 			</view>
 			<!-- #ifdef APP -->
 			<app-update ref="appUpdate" :force="true" :tabbar="false"></app-update>
@@ -123,7 +169,7 @@ import classIcon2 from '@/logo/class_2.png';
 import classIcon3 from '@/logo/class_3.png';
 import classIcon4 from '@/logo/class_4.png';
 import couponWindow from '@/components/couponWindow/index';
-import { getCouponV2, getCouponNewUser, getCrmebCopyRight } from '@/api/api.js';
+import { getCouponV2, getCouponNewUser, getCrmebCopyRight, getArticleDetails } from '@/api/api.js';
 import { getShare } from '@/api/public.js';
 import userInfor from './components/userInfor';
 import homeComb from './components/homeComb';
@@ -159,6 +205,7 @@ import hotspot from './components/hotspot';
 import follow from './components/follow';
 import waterfallsFlow from '@/components/WaterfallsFlow/WaterfallsFlow.vue';
 import emptyPage from '@/components/emptyPage.vue';
+import parser from '@/components/jyf-parser/jyf-parser';
 // #ifdef MP
 import { getTempIds } from '@/api/api.js';
 import { SUBSCRIBE_MESSAGE } from '@/config/cache';
@@ -201,8 +248,21 @@ export default {
 		newsItem() {
 			return (this.styleConfig || []).find((item) => item.name === 'news');
 		},
+		articleListItem() {
+			return (this.styleConfig || []).find((item) => item.name === 'articleList');
+		},
 		filteredStyleConfig() {
 			return (this.styleConfig || []).filter((item) => item.name !== 'news');
+		},
+		modalTitle() {
+			if (this.modalType === 'virtual') return '虚拟导览';
+			if (this.modalType === 'news') return '公告';
+			if (this.modalType === 'article') return this.articleDetail && this.articleDetail.title ? this.articleDetail.title : '图文专栏';
+			if (this.modalType === 'forest') return '课程介绍';
+			if (this.modalType === 'international') return '教育理念';
+			if (this.modalType === 'parenting') return '师资团队';
+			if (this.modalType === 'transfer') return '创始人故事';
+			return '';
 		},
 		...mapGetters(['isLogin', 'uid', 'cartNum'])
 	},
@@ -245,6 +305,7 @@ export default {
 		follow,
 		waterfallsFlow,
 		emptyPage,
+		parser,
 		// #ifdef APP
 		appUpdate
 		// #endif
@@ -256,8 +317,23 @@ export default {
 			classIcon2,
 			classIcon3,
 			classIcon4,
+			homepageExcludeIds: [3, 4, 5, 6],
+			modalVisible: false,
+			modalActive: false,
+			modalTimer: null,
+			modalType: '',
+			articleDetail: null,
+			articleDescription: '',
+			articleLoading: false,
+			articleTagStyle: {
+				img: 'width:100%;display:block;',
+				table: 'width:100%',
+				video: 'width:100%'
+			},
+			panoList: [],
+			panoIndex: 0,
 			logoTry: 0,
-			logoWidth: 250,
+			logoWidth: 0,
 			styleConfig: [],
 			loading: false,
 			loadend: false,
@@ -329,7 +405,7 @@ export default {
 		let that = this;
 		uni.getSystemInfo({
 			success: function (res) {
-				that.logoWidth = 250;
+				that.logoWidth = res.windowWidth / 3;
 			}
 		});
 		uni.hideTabBar();
@@ -845,6 +921,84 @@ export default {
 				});
 			});
 		},
+		openModal(type) {
+			this.modalType = type;
+			this.modalVisible = true;
+			this.modalActive = false;
+			if (this.modalTimer) {
+				clearTimeout(this.modalTimer);
+				this.modalTimer = null;
+			}
+			this.$nextTick(() => {
+				this.modalActive = true;
+			});
+		},
+		openModuleArticle(articleId) {
+			this.openArticleModal({ id: articleId });
+		},
+		openArticleModal(item) {
+			const articleId = typeof item === 'number' ? item : item && item.id;
+			if (!articleId) {
+				return;
+			}
+			this.modalType = 'article';
+			this.articleDetail = null;
+			this.articleDescription = '';
+			this.articleLoading = true;
+			this.modalVisible = true;
+			this.modalActive = false;
+			if (this.modalTimer) {
+				clearTimeout(this.modalTimer);
+				this.modalTimer = null;
+			}
+			this.$nextTick(() => {
+				this.modalActive = true;
+			});
+			getArticleDetails(articleId)
+				.then((res) => {
+					this.articleDetail = res.data;
+					let html = res.data && res.data.content ? res.data.content : '';
+					if (html) {
+						html = html.replace(/<img/gi, '<img style="max-width:100%;height:auto;float:left;display:block" ');
+						html = html.replace(/<video/gi, '<video style="width:100%;height:300px;display:block" ');
+					}
+					this.articleDescription = html;
+					this.articleLoading = false;
+				})
+				.catch(() => {
+					this.articleLoading = false;
+				});
+		},
+		openVirtual() {
+			this.modalType = 'virtual';
+			this.panoIndex = 0;
+			this.panoList = [];
+			for (let i = 1; i <= 8; i++) {
+				this.panoList.push(`/picture720/p_${i}.jpg`);
+			}
+			this.modalVisible = true;
+			this.modalActive = false;
+			if (this.modalTimer) {
+				clearTimeout(this.modalTimer);
+				this.modalTimer = null;
+			}
+			this.$nextTick(() => {
+				this.modalActive = true;
+			});
+		},
+		closeModal() {
+			this.modalActive = false;
+			if (this.modalTimer) {
+				clearTimeout(this.modalTimer);
+				this.modalTimer = null;
+			}
+			this.modalTimer = setTimeout(() => {
+				this.modalVisible = false;
+			}, 260);
+		},
+		panoChange(e) {
+			this.panoIndex = e.detail.current;
+		},
 		newDataStatus(val, num) {
 			this.isFooter = val ? true : false;
 			this.pdHeight = num;
@@ -937,6 +1091,10 @@ export default {
 	// padding-bottom: 50px;
 	overflow-y: scroll;
 	overflow-x: hidden;
+	position: relative;
+	--panel-border: #B7DBB6;
+	--panel-border-width: 1rpx;
+	--panel-radius: 20rpx;
 }
 .myApplet {
 	position: relative;
@@ -973,8 +1131,8 @@ export default {
 }
 
 .home-logo {
-	position: fixed;
-	top: calc(env(safe-area-inset-top) + 6rpx);
+	position: absolute;
+	top: 12rpx;
 	left: 16rpx;
 	height: auto;
 	z-index: 2001;
@@ -989,6 +1147,11 @@ export default {
 
 .notice-wrap {
 	margin-bottom: 12rpx;
+	border-radius: var(--panel-radius);
+	overflow: hidden;
+	border: 0.5rpx solid var(--panel-border);
+	box-sizing: border-box;
+	--notice-inner-radius: var(--panel-radius);
 }
 
 .entrance-row {
@@ -1007,6 +1170,7 @@ export default {
 	flex-direction: column;
 	align-items: center;
 	box-shadow: 0 10rpx 20rpx rgba(0, 0, 0, 0.08);
+	border: 1rpx solid var(--panel-border);
 }
 
 .entrance-icon-img {
@@ -1019,6 +1183,203 @@ export default {
 	margin-top: 10rpx;
 	font-size: 24rpx;
 	color: #000000;
+}
+
+.virtual-card {
+	margin-top: 16rpx;
+	height: 120rpx;
+	border-radius: 28rpx;
+	background-size: cover;
+	background-position: center;
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	align-items: center;
+	padding: 0 24rpx;
+	box-shadow: 0 12rpx 24rpx rgba(0, 0, 0, 0.12);
+	border: 1rpx solid var(--panel-border);
+}
+
+.virtual-title {
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #ffffff;
+	text-shadow: 0 6rpx 12rpx rgba(0, 0, 0, 0.3);
+}
+
+.modal-target {
+	position: relative;
+	border-radius: var(--panel-radius);
+	overflow: hidden;
+	border: 0.5rpx solid var(--panel-border);
+	box-sizing: border-box;
+}
+
+.modal-cover {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 6;
+}
+
+.modal-target .articleList,
+.modal-target .articleList .item {
+	border-radius: var(--panel-radius);
+	overflow: hidden;
+}
+
+.notice-wrap {
+	position: relative;
+}
+
+.notice-wrap > view:not(.modal-cover) {
+	margin-top: 0 !important;
+	padding: 0 !important;
+	box-sizing: border-box;
+}
+
+.modal-mask {
+	position: fixed;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.55);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 2005;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 260ms ease, visibility 260ms ease;
+}
+
+.modal-mask-show {
+	opacity: 1;
+	visibility: visible;
+}
+
+.modal-panel {
+	width: 92%;
+	height: 92vh;
+	max-height: 92vh;
+	background: #ffffff;
+	border-radius: 32rpx;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	transform: translateY(18vh);
+	opacity: 0;
+	transition: transform 360ms ease, opacity 360ms ease;
+	border: 1rpx solid var(--panel-border);
+}
+
+.modal-panel-show {
+	transform: translateY(0);
+	opacity: 1;
+}
+
+.modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 24rpx 28rpx 18rpx;
+}
+
+.modal-title {
+	font-size: 30rpx;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.modal-close {
+	font-size: 36rpx;
+	color: #333333;
+	line-height: 1;
+}
+
+.modal-body {
+	padding: 0 28rpx 28rpx;
+	overflow: auto;
+	flex: 1;
+}
+
+.modal-text {
+	font-size: 26rpx;
+	color: #333333;
+	padding: 10rpx 0 30rpx;
+}
+
+.pano-swiper {
+	width: 100%;
+	height: 520rpx;
+	border-radius: 24rpx;
+	overflow: hidden;
+	border: 1rpx solid var(--panel-border);
+}
+
+.pano-image {
+	width: 100%;
+	height: 520rpx;
+}
+
+.pano-indicator {
+	text-align: center;
+	margin-top: 12rpx;
+	font-size: 24rpx;
+	color: #666666;
+}
+
+.modal-section {
+	padding: 6rpx 0 10rpx;
+}
+
+.article-detail {
+	padding-bottom: 10rpx;
+}
+
+.article-title {
+	font-size: 34rpx;
+	color: #282828;
+	font-weight: 600;
+	line-height: 1.5;
+}
+
+.article-meta {
+	margin-top: 18rpx;
+	display: flex;
+	align-items: center;
+	color: #b1b2b3;
+	font-size: 24rpx;
+}
+
+.article-label {
+	margin-right: 16rpx;
+}
+
+.article-meta-item {
+	margin-left: 16rpx;
+	display: inline-flex;
+	align-items: center;
+}
+
+.article-meta-item .iconfont {
+	font-size: 28rpx;
+	margin-right: 8rpx;
+}
+
+.article-content {
+	margin-top: 20rpx;
+	font-size: 28rpx;
+	color: #8a8b8c;
+}
+
+.index > *:not(.pb-safe):not(.site-config):not(.site-config-placeholder):not(.modal-mask):not(pageFooter):not(.modal-target) {
+	border: 1rpx solid var(--panel-border);
+	border-radius: 20rpx;
+	overflow: hidden;
 }
 
 .error-network {

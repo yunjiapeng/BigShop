@@ -1,9 +1,5 @@
 <template>
 	<view class="page_count">
-		<view class="bg-img" v-if="imgUrls.length">
-			<image :class="{ active: index == swiperCur }" v-for="(i, index) in imgUrls" :src="i.img"></image>
-		</view>
-		<view class="bag-gradient" :style="[bgGradientStyle]"></view>
 		<view class="swiperBg" :style="{ paddingBottom: isMenu ? '20rpx' : '20rpx' }">
 			<view class="swiper page_swiper" v-if="imgUrls.length">
 				<swiper
@@ -145,7 +141,7 @@ export default {
 			};
 		},
 		swiperMargin() {
-			return this.dataConfig.styleConfig.tabVal ? '50rpx' : '10rpx';
+			return '0rpx';
 		},
 		mpHeaderStyle() {
 			let style = {};
@@ -194,14 +190,8 @@ export default {
 			};
 		},
 		imageStyle() {
-			let borderRadius = `${this.dataConfig.filletImg.val * 2}rpx`;
-			if (this.dataConfig.filletImg.type) {
-				borderRadius = `${this.dataConfig.filletImg.valList[0].val * 2}rpx ${this.dataConfig.filletImg.valList[1].val * 2}rpx ${this.dataConfig.filletImg.valList[3].val * 2}rpx ${
-					this.dataConfig.filletImg.valList[2].val * 2
-				}rpx`;
-			}
 			return {
-				'border-radius': borderRadius
+				'border-radius': '0'
 			};
 		},
 		tabListConfig() {
@@ -323,39 +313,6 @@ export default {
 .page_count {
 	position: relative;
 	overflow: hidden;
-	.bag-gradient {
-		position: absolute;
-		left: 0;
-		top: 0;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-		z-index: 0;
-	}
-	.bg-img {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		top: 0;
-		z-index: 0;
-		filter: blur(0);
-		overflow: hidden;
-		image.active {
-			opacity: 1;
-			transform: scale(1.5);
-		}
-		image {
-			position: absolute;
-			left: 0;
-			top: 0;
-			width: 100%;
-			height: 100%;
-			filter: blur(30rpx);
-			transform: scale(1.5);
-			opacity: 0;
-			transition: opacity 0.5s ease;
-		}
-	}
 }
 
 .my-main {
@@ -652,23 +609,37 @@ export default {
 
 .swiperBg {
 	z-index: 1;
+	position: relative;
+	overflow: hidden;
+
+	&::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 120rpx;
+		background: linear-gradient(180deg, rgba(245, 245, 245, 0) 0%, rgba(245, 245, 245, 0.55) 55%, rgba(245, 245, 245, 0.9) 100%);
+		z-index: 30;
+		pointer-events: none;
+	}
 
 	.page_swiper {
 		position: relative;
 		width: 100%;
 		height: auto;
-		margin: 0 auto;
-		border-radius: 15rpx;
+		margin: 0;
+		border-radius: 0;
 		overflow-x: hidden;
 		z-index: 20;
-		padding: 5rpx 10rpx 0;
+		padding: 0;
 
 		uni-swiper {
 			height: 750rpx;
 		}
 
 		swiper-item {
-			border-radius: 15rpx;
+			border-radius: 0;
 		}
 
 		.swiper-item,
@@ -677,7 +648,7 @@ export default {
 			width: 100%;
 			height: 100%;
 			margin: 0 auto;
-			border-radius: 15rpx;
+			border-radius: 0;
 		}
 
 		swiper {
@@ -686,7 +657,7 @@ export default {
 		}
 
 		image {
-			transform: scale(0.93);
+			transform: scale(1);
 			transition: all 0.6s ease;
 		}
 

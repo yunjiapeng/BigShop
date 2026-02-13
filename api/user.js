@@ -733,3 +733,51 @@ export function spreadAgent(data) {
 export function transferInfoApi(data) {
 	return request.get(`transfer/info`, data);
 }
+
+export function getChildrenList() {
+	return request.get('v2/school/children');
+}
+
+export function getMyClasses() {
+	return request.get('v2/school/classes');
+}
+
+export function getChildGallery(data) {
+	return request.get('v2/school/child_gallery', data);
+}
+
+export function getChildDetail(childUid) {
+	return request.get(`v2/school/children/${childUid}`);
+}
+
+export function createChild(data) {
+	return request.post('v2/school/children', data);
+}
+
+export function updateChild(childUid, data) {
+	return request.post(`v2/school/children/${childUid}`, data, {
+		noVerify: true
+	});
+}
+
+export function deleteChild(childUid) {
+	return request.post(`v2/school/children/delete/${childUid}`, {}, {
+		noVerify: true
+	});
+}
+
+export function getBigclassList(productId) {
+	return request.get('v2/school/bigclass', {
+		product_id: productId
+	});
+}
+
+export function getCourseTermMap(data) {
+	return request.get('v2/school/period-to-date', data);
+}
+
+export function courseOrderBackfill(data) {
+	return request.post('v2/school/order/backfill', data, {
+		noVerify: true
+	});
+}
