@@ -106,11 +106,11 @@
 				<view v-if="showAddChild" class="form-item">
 					<view class="label">性别</view>
 					<radio-group class="gender-group" @change="onGenderChange">
-						<label class="gender-item">
+						<label class="gender-item" :class="{ active: childGender === 'male' }">
 							<radio value="male" :checked="childGender === 'male'" />
 							<text>男</text>
 						</label>
-						<label class="gender-item">
+						<label class="gender-item" :class="{ active: childGender === 'female' }">
 							<radio value="female" :checked="childGender === 'female'" />
 							<text>女</text>
 						</label>
@@ -513,7 +513,7 @@ export default {
 			this.editingChildId = '';
 			this.childName = '';
 			this.childBirthday = '';
-			this.childGender = 'male';
+			this.childGender = '';
 			this.parentPhone = '';
 		},
 		cancelAddChild() {
@@ -539,6 +539,13 @@ export default {
 			if (!this.childName) {
 				uni.showToast({
 					title: '请填写孩子姓名',
+					icon: 'none'
+				});
+				return;
+			}
+			if (!this.childGender) {
+				uni.showToast({
+					title: '请选择性别',
 					icon: 'none'
 				});
 				return;
@@ -1380,6 +1387,16 @@ input {
 	align-items: center;
 	font-size: 26rpx;
 	color: #111827;
+	padding: 10rpx 18rpx;
+	border-radius: 999rpx;
+	border: 1rpx solid transparent;
+	background: #f8fafc;
+}
+
+.gender-item.active {
+	border-color: #111827;
+	color: #111827;
+	background: #e5e7eb;
 }
 
 radio {
