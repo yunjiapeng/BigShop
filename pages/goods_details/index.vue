@@ -1,23 +1,18 @@
 <template>
 	<view class="product-con" :style="colorStyle">
 		<view class="product-con">
-			<!-- #ifndef APP-PLUS -->
 			<view class="navbar" :style="{ height: navH + 'rpx', opacity: opacity }">
 				<view class="navbarH" :style="'height:' + navH + 'rpx;'">
 					<view class="navbarCon acea-row row-center-wrapper" :style="{ paddingRight: navbarRight - 20 + 'px' }">
+						<view class="navbarBack" @tap="returns">
+							<text class="iconfont icon-xiangzuo"></text>
+						</view>
 						<view class="header acea-row row-center-wrapper">
 							<view class="item" :class="navActive === index ? 'on' : ''" v-for="(item, index) in navList" :key="index" @tap="tap(index)">{{ item }}</view>
 						</view>
 					</view>
 				</view>
 			</view>
-			<!-- #endif -->
-			<!-- <view class='iconfont icon-xiangzuo' :style="{top:navH/2+'rpx',opacity:(1-opacity)}" @tap='returns'></view> -->
-			<!-- #ifndef APP-PLUS -->
-			<view id="home" class="home acea-row row-center-wrapper" :class="[opacity > 0.5 ? 'on' : '']" :style="{ top: homeTop + 'rpx' }">
-				<view class="iconfont icon-fanhui2" @tap="returns"></view>
-			</view>
-			<!-- #endif -->
 			<homeList :navH="navH" :returnShow="returnShow" :currentPage="currentPage" :sysHeight="sysHeight"></homeList>
 			<view>
 				<scroll-view :scroll-top="scrollTop" scroll-y="true" scroll-with-animation="true" :style="'height:' + height + 'px;'" @scroll="scroll">
@@ -238,7 +233,7 @@
 				<view class="bnt acea-row">
 					<form @submit="goBuy" class="buy bnts">
 						<button class="buy bnts" form-type="submit">
-							{{ $t(`购买课程`) }}
+							{{ isCourseProduct ? $t(`购买课程`) : $t(`购买`) }}
 						</button>
 					</form>
 				</view>
@@ -524,6 +519,8 @@ export default {
 			svip_price_open: 1,
 			is_gift: 0, // 是否支持送礼
 			isGiftOrder: 0,
+			isCourseProduct: false,
+			courseProductIds: [17, 15, 13, 11, 10, 9],
 			realPriceData: {
 				is_vip: 0,
 				price: 0,
@@ -551,7 +548,7 @@ export default {
 			immediate: true
 		}
 	},
-	onLoad(options) {
+		onLoad(options) {
 		let that = this;
 		var pages = getCurrentPages();
 		that.returnShow = pages.length === 1 ? false : true;
@@ -565,6 +562,7 @@ export default {
 		that.navH = 30;
 		// #endif
 		that.id = options.id;
+		that.isCourseProduct = this.isCourseId(that.id);
 		uni.getSystemInfo({
 			success: function (res) {
 				that.height = res.windowHeight;
@@ -1079,6 +1077,10 @@ export default {
 					);
 				});
 		},
+		isCourseId(id) {
+			const list = Array.isArray(this.courseProductIds) ? this.courseProductIds : [];
+			return list.some((value) => Number(value) === Number(id));
+		},
 		infoScroll: function () {
 			var that = this,
 				topArr = [],
@@ -1418,13 +1420,18 @@ export default {
 				toLogin();
 			} else {
 				this.$refs.proSwiper.videoIsPause();
+				if (!this.isCourseProduct) {
+					this.goCat(1);
+					return;
+				}
 				const attrValue = this.attrValue || '';
 				const specType = this.getSpecType(attrValue);
 				const price = (this.attr && this.attr.productSelect && this.attr.productSelect.price) || this.storeInfo.price || '';
+				const classId = (this.storeInfo && (this.storeInfo.class_id || this.storeInfo.classid || this.storeInfo.classId || this.storeInfo.bigclass_id || this.storeInfo.bigclassid)) || '';
 				uni.navigateTo({
 					url: `/pages/course/booking/index?id=${this.id}&price=${encodeURIComponent(price)}&spec=${specType}&attr=${encodeURIComponent(
 						attrValue
-					)}`
+					)}${classId ? `&classid=${classId}` : ''}`
 				});
 			}
 		},
@@ -2113,6 +2120,19 @@ action-sheet-item {
 	// justify-content: flex-end;
 	padding-left: 48px;
 	/* #endif */
+}
+
+.navbarBack {
+	position: absolute;
+	left: 20rpx;
+	bottom: 22rpx;
+	width: 56rpx;
+	height: 56rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #333;
+	font-size: 36rpx;
 }
 
 .home {

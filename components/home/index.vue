@@ -1,5 +1,5 @@
 <template>
-	<view :style="colorStyle">
+	<view v-if="false" :style="colorStyle">
 		<view style="touch-action: none;">
 			<view class="home" style="position:fixed;" :style="{ top: top + 'px'}" id="right-nav"
 				@touchmove.stop.prevent="setTouchMove">

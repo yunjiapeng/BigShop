@@ -1,5 +1,6 @@
 <template>
 	<view class="product-con" :style="colorStyle">
+		<menuIcon :showMenu="false" :opacity="opacity" />
 		<view class="navbar" :style="{ height: navH + 'rpx', opacity: opacity }">
 			<view class="navbarH" :style="'height:' + navH + 'rpx;'">
 				<view class="navbarCon acea-row row-center-wrapper" :style="{ paddingRight: navbarRight + 'px' }">
@@ -9,12 +10,6 @@
 					</view>
 				</view>
 			</view>
-		</view>
-		<!-- <view class='iconfont icon-xiangzuo' :style="{top:navH/2+'rpx',opacity:(1-opacity)}" @tap='returns'></view> -->
-		<view id="home" class="home acea-row row-center-wrapper iconfont icon-xiangzuo" :class="opacity>0.5?'on':''"
-			:style="{ top: homeTop + 'rpx' }" v-if="returnShow" @tap="returns">
-			<!-- <view class="line" v-if="returnShow"></view>
-			<navigator url="/pages/index/index" class="iconfont icon-shouye4"></navigator> -->
 		</view>
 		<view>
 			<scroll-view :scroll-top="scrollTop" scroll-y="true" scroll-with-animation="true"
@@ -34,7 +29,7 @@
 						</view>
 						<view class="label acea-row row-between-wrapper" style="padding-bottom: 20rpx;">
 							<view class="delete-line" v-text="$t(`￥`) + (storeInfo.ot_price || 0)"></view>
-							<view v-text="$t(`已预订`)':' + (storeInfo.sales || 0) + (storeInfo.unit_name || '')"></view>
+							<view v-text="$t(`已预订`) + (storeInfo.sales || 0) + (storeInfo.unit_name || '')"></view>
 						</view>
 						<view class="introduce" v-text="storeInfo.title"></view>
 						<view v-if="!is_money_level && storeInfo.vip_price && storeInfo.is_vip"
@@ -274,9 +269,11 @@
 	import colors from "@/mixins/color";
 	import {HTTP_REQUEST_URL} from '@/config/app';
 	import cusPreviewImg from "@/components/cusPreviewImg/index.vue";
+import menuIcon from '@/components/menuIcon.vue';
 	let app = getApp();
 	export default {
 		components: {
+			menuIcon,
 			productConSwiper,
 			couponListWindow,
 			productWindow,

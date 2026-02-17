@@ -769,11 +769,22 @@ export function deleteChild(childUid) {
 export function getBigclassList(productId) {
 	return request.get('v2/school/bigclass', {
 		product_id: productId
+	}, {
+		noAuth: true
 	});
 }
 
 export function getCourseTermMap(data) {
 	return request.get('v2/school/period-to-date', data);
+}
+
+export function getBigclassCycle(classId, params = {}) {
+	return request.get('v2/school/bigclasscycle', {
+		classid: classId,
+		...params
+	}, {
+		noAuth: true
+	});
 }
 
 export function courseOrderBackfill(data) {

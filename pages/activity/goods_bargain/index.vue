@@ -1,5 +1,6 @@
 <template>
 	<view :style="colorStyle" style="background-color: var(--view-theme); min-height: 100vh; padding-bottom: 1rpx">
+		<menuIcon :showMenu="false" />
 		<view class="bargain-list">
 			<!-- #ifndef APP-PLUS -->
 			<!-- 	<view class='iconfont icon-xiangzuo' @tap='goBack' :style="'top:'+ (navH/2  - 12) +'rpx'" v-if="returnShow">
@@ -45,6 +46,7 @@ import { getBargainList } from '@/api/activity.js';
 import { openBargainSubscribe } from '@/utils/SubscribeMessage.js';
 import { getUserInfo } from '@/api/user.js';
 import home from '@/components/home';
+import menuIcon from '@/components/menuIcon.vue';
 import { toLogin } from '@/libs/login.js';
 import { colorChange } from '@/api/api.js';
 import { mapGetters } from 'vuex';
@@ -57,6 +59,7 @@ export default {
 	mixins: [colors],
 	components: {
 		home,
+		menuIcon,
 		// #ifdef MP
 		authorize
 		// #endif

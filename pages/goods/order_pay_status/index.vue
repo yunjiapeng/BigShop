@@ -1,5 +1,5 @@
 <template>
-	<view :style="colorStyle">
+	<view :style="colorStyle" class="order-pay-status">
 		<view class="payment-status" v-if="(!orderLottery || !order_pay_info.paid || is_gift) && loading && lotteryLoading">
 			<!--失败时： 用icon-iconfontguanbi fail替换icon-duihao2 bg-color-->
 			<view class="iconfont icons icon-duihao2 bg-color" v-if="order_pay_info.paid || order_pay_info.pay_type == 'offline'"></view>
@@ -495,10 +495,11 @@ export default {
 	text-shadow: 0px 4px 0px rgba(255, 255, 255, 0.5);
 	border: 6rpx solid #f5f5f5;
 	margin: -76rpx auto 0 auto;
-	background-color: #999;
+	background-color: var(--view-theme);
 }
 
 .payment-status .icons.icon-iconfontguanbi {
+	background-color: #999;
 	text-shadow: 0px 4px 0px #6c6d6d;
 }
 
@@ -543,6 +544,10 @@ export default {
 	text-align: center;
 	line-height: 86rpx;
 	margin: 0 auto 20rpx auto;
+}
+
+.order-pay-status {
+	--view-theme: #41b035;
 }
 .share-box {
 	z-index: 1000;

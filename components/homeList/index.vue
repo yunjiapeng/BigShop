@@ -1,10 +1,10 @@
 <template>
 	<!-- #ifdef APP-PLUS -->
-	<view class="animated dialog_nav" :style="{ top: (navH+65) + 'rpx', marginTop: sysHeight}"
+	<view v-if="false" class="animated dialog_nav" :style="{ top: (navH+65) + 'rpx', marginTop: sysHeight}"
 		:class="[goodList?'dialogIndex':'',currentPage?'':'']" v-show="currentPage">
 		<!-- #endif -->
 		<!-- #ifndef APP-PLUS -->
-		<view class="animated dialog_nav" :style="{ top: (navH+15) + 'rpx' }"
+		<view v-if="false" class="animated dialog_nav" :style="{ top: (navH+15) + 'rpx' }"
 			:class="[goodList?'dialogIndex':'',goodsShow?'dialogGoods':'',currentPage?'':'']" v-show="currentPage">
 			<!-- #endif -->
 			<view class="dialog_nav_item" :class="item.after" v-for="(item,index) in selectNavList" :key="index"

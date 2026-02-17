@@ -151,7 +151,7 @@
 						.port +
 						'/pages/goods/order_details/index?order_id=' + this.order_id : location.protocol +
 						'//' + location.hostname +
-						'/pages/goods/order_details/index?order_id=' + this.order_id
+						'/pages/goods/order_details/index?order_id=' + this.order_id,
 					// #endif
 					// #ifdef APP-PLUS
 					quitUrl: '/pages/goods/order_details/index?order_id=' + this.order_id

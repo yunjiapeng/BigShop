@@ -10,7 +10,7 @@
 						<view class="name line1">{{ item.nickname }}</view>
 						<view class="vipImg" v-if="item.is_money_level>0"><image src="../../static/images/svip.gif"></image></view>
 					</view>
-					<view class="start" :class="'star' + item.star"></view>
+					<view v-if="showStar" class="start" :class="'star' + item.star"></view>
 				</view>
 			</view>
 			<view class="time">{{ item.add_time }} {{ item.suk }}</view>
@@ -34,6 +34,10 @@
 			reply: {
 				type: Array,
 				default: () => []
+			},
+			showStar: {
+				type: Boolean,
+				default: true
 			}
 		},
 		data: function() {

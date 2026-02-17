@@ -1,11 +1,6 @@
 <template>
 	<view class="course-booking">
-		<view class="top-bar">
-			<view class="back-btn" @click="goBack">
-				<text class="iconfont icon-xiangzuo"></text>
-				<text class="back-text">返回</text>
-			</view>
-		</view>
+		<menuIcon :showMenu="false" />
 		<view v-if="isHoliday" class="section">
 			<view class="section-title">{{ durationTitle }}</view>
 			<view class="duration-card">
@@ -140,8 +135,12 @@
 
 <script>
 import { getProductDetail, postCartAdd } from '@/api/store.js';
-import { getChildrenList, createChild, updateChild, deleteChild, getCourseTermMap } from '@/api/user.js';
+import { getChildrenList, createChild, updateChild, deleteChild, getBigclassCycle } from '@/api/user.js';
+import menuIcon from '@/components/menuIcon.vue';
 export default {
+	components: {
+		menuIcon
+	},
 	data() {
 		return {
 			productId: '',
@@ -150,6 +149,7 @@ export default {
 			selectedSpec: '',
 			selectedAttr: '',
 			productInfo: {},
+			classId: '',
 			attrUnique: '',
 			weeks: [
 				{ month: 8, week: 1 },
@@ -293,20 +293,24 @@ export default {
 			return this.stepWidth * (this.endIndex + 1);
 		}
 	},
-	onLoad(options) {
+	async onLoad(options) {
 		this.productId = (options && options.id) || '';
 		this.priceProductId = this.productId || 6;
 		this.selectedPrice = (options && options.price) || '';
 		this.selectedSpec = (options && options.spec) || '';
 		const attrValue = (options && options.attr) || '';
 			this.selectedAttr = attrValue;
+		this.classId = (options && (options.classid || options.classId || options.class_id)) || '';
 		this.specType = this.getSpecType(this.selectedSpec || attrValue);
 		this.resetRange();
 		if (!this.selectedPrice) {
 			this.loadProductPrices();
 		}
 		if (this.productId) {
-			this.loadProductInfo();
+			await this.loadProductInfo();
+			if (!this.classId) {
+				this.classId = this.extractClassId(this.productInfo) || '';
+			}
 			this.loadTermMap();
 		}
 		this.loadChildren();
@@ -444,26 +448,64 @@ export default {
 				return;
 			}
 			try {
-				const res = await getCourseTermMap({
-					product_id: this.productId,
-					course_type: this.courseType
+				const classId = await this.resolveClassId();
+				if (!classId) {
+					this.termDateMap = {};
+					return;
+				}
+				const res = await getBigclassCycle(classId, {
+					year: new Date().getFullYear()
 				});
-				this.termDateMap = this.normalizeTermMap(res && res.data);
+				const data = (res && res.data && res.data.list) || (res && res.data) || [];
+				this.termDateMap = this.normalizeTermMap(data);
 			} catch (e) {
 				this.termDateMap = {};
 			}
+		},
+		extractClassId(info) {
+			if (!info) return '';
+			return info.class_id || info.classid || info.classId || info.bigclass_id || info.bigclassid || '';
+		},
+		async resolveClassId() {
+			const raw = String(this.classId || '').toUpperCase();
+			if (/^[A-F]$/.test(raw)) {
+				this.classId = raw;
+				return this.classId;
+			}
+			const letter = (this.getClasstype && this.getClasstype()) ? String(this.getClasstype()).toUpperCase() : '';
+			if (/^[A-F]$/.test(letter)) {
+				this.classId = letter;
+				return this.classId;
+			}
+			const info = this.productInfo || {};
+			const fromProduct = this.extractClassId(info);
+			const fromProductText = String(fromProduct || '').toUpperCase();
+			if (/^[A-F]$/.test(fromProductText)) {
+				this.classId = fromProductText;
+				return this.classId;
+			}
+			this.classId = '';
+			return this.classId;
 		},
 		normalizeTermMap(data) {
 			if (!data) return {};
 			const map = {};
 			if (Array.isArray(data)) {
-				data.forEach((item) => {
+				data.forEach((item, index) => {
 					if (!item) return;
-					const term = Number(item.term || item.period || item.index || item.no);
+					const rawTerm = item.cycle || item.term || item.period || item.index || item.no;
+					let term = Number(rawTerm);
+					if (!term && rawTerm !== 0) {
+						const match = String(rawTerm || '').match(/\d+/);
+						if (match) term = Number(match[0]);
+					}
+					if (!term && Number.isFinite(index)) {
+						term = index + 1;
+					}
 					if (!term) return;
 					map[term] = {
 						startdate: item.startdate || item.start_date || item.start,
-						deadline: item.deadline || item.enddate || item.end_date || item.end
+						deadline: item.enddate || item.end_date || item.end || item.deadline
 					};
 				});
 				return map;
@@ -477,7 +519,7 @@ export default {
 					if (typeof item === 'object') {
 						map[term] = {
 							startdate: item.startdate || item.start_date || item.start,
-							deadline: item.deadline || item.enddate || item.end_date || item.end
+							deadline: item.enddate || item.end_date || item.end || item.deadline
 						};
 					}
 				});
@@ -635,20 +677,22 @@ export default {
 		},
 		getClasstype() {
 			const productInfo = this.productInfo || {};
+			const map = {
+				17: 'A',
+				15: 'D',
+				13: 'C',
+				11: 'F',
+				10: 'E',
+				9: 'B'
+			};
+			const fromMap = map[Number(this.productId)];
+			if (fromMap) return fromMap;
 			if (productInfo.classtype) return String(productInfo.classtype).toUpperCase();
 			if (productInfo.class_type) return String(productInfo.class_type).toUpperCase();
 			const name = `${productInfo.store_name || ''}${this.selectedSpec || ''}${this.selectedAttr || ''}`;
 			const match = name.match(/[A-F]/i);
 			if (match) return match[0].toUpperCase();
-			const map = {
-				17: 'A',
-				15: 'B',
-				13: 'C',
-				11: 'D',
-				10: 'E',
-				9: 'F'
-			};
-			return map[Number(this.productId)] || 'A';
+			return 'A';
 		},
 		formatDate(value) {
 			const date = value instanceof Date ? value : new Date(value);
@@ -664,14 +708,36 @@ export default {
 			date.setDate(date.getDate() + days);
 			return this.formatDate(date);
 		},
+		getNearestTerm(term, preferForward) {
+			const keys = Object.keys(this.termDateMap || {})
+				.map((key) => Number(key))
+				.filter((value) => !Number.isNaN(value))
+				.sort((a, b) => a - b);
+			if (!keys.length) return {};
+			if (this.termDateMap[term]) return this.termDateMap[term] || {};
+			if (preferForward) {
+				const forward = keys.find((key) => key >= term);
+				if (forward !== undefined) return this.termDateMap[forward] || {};
+			}
+			const backward = keys.slice().reverse().find((key) => key <= term);
+			if (backward !== undefined) return this.termDateMap[backward] || {};
+			return this.termDateMap[keys[0]] || {};
+		},
+		getSelectedTermRange() {
+			const startTerm = this.startIndex + 1;
+			const endTerm = this.isHolidayMonth ? this.endIndex + 1 : startTerm;
+			return {
+				startTerm,
+				endTerm
+			};
+		},
 		async getHolidayDates() {
 			if (!Object.keys(this.termDateMap || {}).length) {
 				await this.loadTermMap();
 			}
-			const startTerm = this.startIndex + 1;
-			const endTerm = this.isHolidayMonth ? this.endIndex + 1 : startTerm;
-			const start = this.termDateMap[startTerm] || {};
-			const end = this.termDateMap[endTerm] || {};
+			const { startTerm, endTerm } = this.getSelectedTermRange();
+			const start = this.getNearestTerm(startTerm, true);
+			const end = this.getNearestTerm(endTerm, false);
 			return {
 				startdate: start.startdate || '',
 				deadline: end.deadline || ''
@@ -731,39 +797,6 @@ export default {
 				deadline: dates.deadline,
 				bigclass: 1
 			};
-			if (this.selectedChildIds.length === 1) {
-				try {
-					const cartRes = await postCartAdd({
-						productId: this.productId,
-						cartNum: 1,
-						new: 1,
-						uniqueId: this.attrUnique || '',
-						virtual_type: this.productInfo.virtual_type,
-						bigclass: 1
-					});
-					const cartId = cartRes && cartRes.data && cartRes.data.cartId;
-					if (!cartId) return;
-					const childId = this.selectedChildIds[0];
-					const query = [
-						`cartId=${cartId}`,
-						'new=1',
-						`classtype=${encodeURIComponent(courseParams.classtype || '')}`,
-						`startdate=${encodeURIComponent(courseParams.startdate || '')}`,
-						`deadline=${encodeURIComponent(courseParams.deadline || '')}`,
-						`bigclass_child_uid=${encodeURIComponent(childId)}`,
-						'bigclass=1'
-					].join('&');
-					uni.navigateTo({
-						url: `/pages/goods/order_confirm/index?${query}`
-					});
-				} catch (e) {
-					uni.showToast({
-						title: '下单失败',
-						icon: 'none'
-					});
-				}
-				return;
-			}
 			try {
 				const cartRes = await postCartAdd({
 					productId: this.productId,
@@ -775,13 +808,16 @@ export default {
 				});
 				const cartId = cartRes && cartRes.data && cartRes.data.cartId;
 				if (!cartId) return;
+				const childIds = this.selectedChildIds.join(',');
+				const firstChildId = this.selectedChildIds[0] || '';
 				const query = [
 					`cartId=${cartId}`,
 					'new=1',
 					`classtype=${encodeURIComponent(courseParams.classtype || '')}`,
 					`startdate=${encodeURIComponent(courseParams.startdate || '')}`,
 					`deadline=${encodeURIComponent(courseParams.deadline || '')}`,
-					`child_uids=${encodeURIComponent(this.selectedChildIds.join(','))}`,
+					`child_uids=${encodeURIComponent(childIds)}`,
+					`bigclass_child_uid=${encodeURIComponent(firstChildId)}`,
 					'bigclass=1'
 				].join('&');
 				uni.navigateTo({

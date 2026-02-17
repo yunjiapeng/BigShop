@@ -64,6 +64,20 @@
 				"navigationBarTitleText": "购买课程",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/course/activity_review/index",
+			"style": {
+				"navigationBarTitleText": "活动评价",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/course/class_dynamic/index",
+			"style": {
+				"navigationBarTitleText": "班级动态",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 	"subPackages": [{

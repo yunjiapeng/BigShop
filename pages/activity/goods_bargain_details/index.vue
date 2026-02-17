@@ -1,9 +1,7 @@
 <template>
 	<view class="main-warper" style="background-color: var(--view-theme); padding-bottom: 50rpx" :style="colorStyle">
+		<menuIcon :showMenu="false" />
 		<view class="bargain">
-			<!-- #ifndef APP-PLUS || MP -->
-			<view class="iconfont icon-xiangzuo" v-if="retunTop" @tap="goBack" :style="'top:' + navH + 'px'"></view>
-			<!-- #endif -->
 			<view :style="'background-image: url(' + (bargainUid != userInfo.uid ? imgHost + picUrl.support : imgHost + picUrl.barga) + ');'" class="header">
 				<view class="people">
 					{{ peopleCount.lookCount || 0 }}{{ $t(`人查看`) }} 丨 {{ peopleCount.shareCount || 0 }}{{ $t(`人分享`) }} 丨 {{ peopleCount.userCount || 0 }}{{ $t(`人参与`) }}
@@ -284,12 +282,14 @@ import authorize from '@/components/Authorize';
 import countDown from '@/components/countDown';
 import home from '@/components/home';
 import parser from '@/components/jyf-parser/jyf-parser';
+import menuIcon from '@/components/menuIcon.vue';
 import { TOKENNAME, HTTP_REQUEST_URL } from '@/config/app.js';
 const app = getApp();
 import colors from '@/mixins/color';
 
 export default {
 	components: {
+		menuIcon,
 		countDown,
 		// #ifdef MP
 		authorize,

@@ -2,18 +2,44 @@
 
 /* #ifdef H5 */
 :root {
-	/* --view-theme: red;
-	--view-fontColor: #333 */
+	--ui-primary: var(--view-theme);
+	--ui-text: #333;
+	--ui-text-secondary: #666;
+	--ui-bg: #f7f7f7;
+	--ui-border: #e5e5e5;
+	--ui-radius-sm: 10rpx;
+	--ui-radius-md: 16rpx;
+	--ui-radius-lg: 24rpx;
+	--ui-font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+	--ui-font-size-sm: 24rpx;
+	--ui-font-size-md: 28rpx;
+	--ui-font-size-lg: 32rpx;
 }
 
 /* #endif */
 /* #ifdef MP */
 page {
-	/* --view-theme: #fff;
-	--view-fontColor: #333 */
+	--ui-primary: var(--view-theme);
+	--ui-text: #333;
+	--ui-text-secondary: #666;
+	--ui-bg: #f7f7f7;
+	--ui-border: #e5e5e5;
+	--ui-radius-sm: 10rpx;
+	--ui-radius-md: 16rpx;
+	--ui-radius-lg: 24rpx;
+	--ui-font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+	--ui-font-size-sm: 24rpx;
+	--ui-font-size-md: 28rpx;
+	--ui-font-size-lg: 32rpx;
 }
 
 /* #endif */
+page {
+	color: var(--ui-text);
+	font-family: var(--ui-font-family);
+	font-size: var(--ui-font-size-md);
+	background-color: var(--ui-bg);
+}
 .font-color,
 .font-color-red {
 	color: var(--view-priceColor) !important
@@ -24,7 +50,7 @@ page {
 }
 
 .bg-color {
-	background-color: var(--view-theme) !important
+	background-color: var(--ui-primary) !important
 }
 
 .icon-color {
@@ -32,8 +58,8 @@ page {
 }
 
 .cart-color {
-	color: var(--view-theme) !important;
-	border: 1px solid var(--view-theme) !important
+	color: var(--ui-primary) !important;
+	border: 1px solid var(--ui-primary) !important
 }
 
 .borderRadius15 {

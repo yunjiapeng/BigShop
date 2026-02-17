@@ -38,20 +38,39 @@
 						<view class="section-title">班级动态</view>
 						<emptyPage v-if="!isLogin" :title="$t(`请先登录查看班级动态`)"></emptyPage>
 						<view v-else>
-							<view class="filter-card">
-								<view class="filter-label">我的班级</view>
-								<scroll-view class="chip-row" scroll-x="true">
-									<view
-										v-for="cls in classList"
-										:key="getClassKey(cls)"
-										class="chip"
-										:class="{ active: isClassActive(cls) }"
-										@click="selectClass(cls)"
-									>
-										<view class="chip-text">{{ getClassName(cls) }}</view>
+							<view class="hero-card" v-if="currentCourseCard" @click="viewCourse(currentCourseCard)">
+								<image
+									class="hero-card-bg"
+									:src="currentCourseCard.recommend_image || currentCourseCard.image || officialCover"
+									mode="aspectFill"
+								></image>
+								<view class="hero-card-scrim"></view>
+								<view class="hero-card-top">
+									<view class="hero-card-title">{{ currentCourseCard.store_name || courseCategoryTitle || '当前课程' }}</view>
+									<view v-if="getSubtitle(currentCourseCard.store_name)" class="hero-card-desc">
+										{{ getSubtitle(currentCourseCard.store_name) }}
 									</view>
-									<view v-if="!classLoading && !classList.length" class="chip-empty">暂无班级</view>
-								</scroll-view>
+								</view>
+								<view class="hero-card-tabs" v-if="showClassTabs">
+									<scroll-view class="hero-tab-row" scroll-x="true" @click.stop>
+										<view
+											v-for="cls in classList"
+											:key="getClassKey(cls)"
+											class="hero-tab"
+											:class="{ active: isClassActive(cls) }"
+											@click.stop="selectClass(cls)"
+										>
+											<view class="hero-tab-text">{{ getClassName(cls) }}</view>
+										</view>
+									</scroll-view>
+								</view>
+								<view class="feature-actions">
+									<view v-for="b in classActionButtons" :key="b" class="feature-action" @click.stop="tapAction(b)">
+										<view class="feature-action-text">{{ b }}</view>
+									</view>
+								</view>
+							</view>
+							<view class="filter-card">
 								<view class="filter-label">我的孩子</view>
 								<scroll-view class="chip-row" scroll-x="true">
 									<view
@@ -85,40 +104,23 @@
 
 			<swiper-item>
 				<scroll-view class="pane" scroll-y="true">
-					<view class="section">
-						<view class="hero-card" @click="tapAction('主题营')">
-							<image class="hero-card-bg" :src="campCover" mode="aspectFill"></image>
-							<view class="hero-card-scrim"></view>
-							<view class="hero-card-top">
-								<view class="hero-card-title">主题营</view>
-								<view class="hero-card-desc">主题挑战式学习 · 作品导向 · 轻量打卡</view>
-							</view>
-							<view class="hero-card-bottom">
-								<view class="hero-chip">主题</view>
-								<view class="hero-chip">挑战</view>
-								<view class="hero-chip">作品</view>
-								<view class="hero-chip">打卡</view>
-							</view>
-						</view>
-
-						<view class="quick-actions">
-							<view v-for="b in actionButtons" :key="b" class="quick-action" @click="tapAction(b)">
-								<view class="quick-action-text">{{ b }}</view>
-							</view>
-						</view>
-
-						<view class="waterfall">
-							<view class="wf-col">
-								<view v-for="(img, idx) in campWaterfallLeft" :key="'cl-' + idx" class="wf-item">
-									<image class="wf-img" :src="img" mode="aspectFill"></image>
-								</view>
-							</view>
-							<view class="wf-col">
-								<view v-for="(img, idx) in campWaterfallRight" :key="'cr-' + idx" class="wf-item">
-									<image class="wf-img" :src="img" mode="aspectFill"></image>
+					<view v-for="group in campGroups" :key="group.key" class="section">
+						<view class="section-title">{{ group.title }}</view>
+						<view :class="group.layout === 'double' ? 'camp-grid' : 'camp-list'">
+							<view
+								v-for="item in group.items"
+								:key="item.id"
+								:class="['camp-card', group.layout === 'double' ? 'camp-card-compact' : '']"
+								@click="viewCourse(item)"
+							>
+								<image class="camp-card-bg" :src="item.recommend_image || item.image || campCover" mode="aspectFill"></image>
+								<view class="camp-card-scrim"></view>
+								<view class="camp-card-info">
+									<view class="camp-card-title">{{ item.store_name }}</view>
 								</view>
 							</view>
 						</view>
+						<emptyPage v-if="!group.items.length" :title="$t(`暂无${group.title}`)"></emptyPage>
 					</view>
 				</scroll-view>
 			</swiper-item>
@@ -144,7 +146,7 @@ export default {
 			tabs: [
 				{ key: 'select', title: '购买课程' },
 				{ key: 'official', title: '班级动态' },
-				{ key: 'camp', title: '主题营' }
+				{ key: 'camp', title: '主题营/周边' }
 			],
 			currentTab: 0,
 			courseCategoryTitle: '',
@@ -161,6 +163,9 @@ export default {
 			galleryLimit: 200,
 			galleryCount: 0,
 			galleryLoading: false,
+			campProducts: [],
+			campCategories: [],
+			campCategoryProducts: {},
 			courseGroupConfig: [
 				{ key: 'regular', title: '平时课程', ids: [17, 15] },
 				{ key: 'winter', title: '寒假课程', ids: [10, 9] },
@@ -177,11 +182,34 @@ export default {
 			officialCover: '',
 			campCover: '',
 			actionButtons: ['课程介绍', '课程表', '作业', '资料'],
+			classActionButtons: ['近期动态', '活动评价', '联系老师'],
 			campWaterfall: []
 		};
 	},
 	computed: {
 		...mapGetters(['isLogin']),
+		showClassTabs() {
+			return Array.isArray(this.classList) && this.classList.length > 1;
+		},
+		currentCourseCard() {
+			const list = Array.isArray(this.courseList) ? this.courseList : [];
+			if (list.length) return list[0];
+			const fallback = this.getMockCourses();
+			return fallback.length ? fallback[0] : null;
+		},
+		campGroups() {
+			const groups = [
+				{ key: 'parent', title: '家长课堂', label: '家长课堂', layout: 'single' },
+				{ key: 'family', title: '亲子活动', label: '亲子活动', layout: 'single' },
+				{ key: 'peripheral', title: '周边商品', label: '周边商品', layout: 'double' }
+			];
+			return groups.map((group) => ({
+				key: group.key,
+				title: group.title,
+				layout: group.layout,
+				items: this.getCampGroupItems(group)
+			}));
+		},
 		courseGroups() {
 			const list = Array.isArray(this.courseList) ? this.courseList : [];
 			return this.courseGroupConfig.map((group) => {
@@ -215,7 +243,6 @@ export default {
 			return (
 				this.isLogin &&
 				!this.galleryLoading &&
-				this.classList.length &&
 				this.children.length &&
 				!this.galleryList.length
 			);
@@ -229,9 +256,10 @@ export default {
 			deep: true
 		}
 	},
-	onLoad() {
+	async onLoad() {
 		this.initUiData();
-		this.loadCategoriesAndCourses();
+		await this.loadCategoriesAndCourses();
+		await this.loadCampProducts();
 		if (this.isLogin) this.loadClassDynamic();
 	},
 	methods: {
@@ -260,9 +288,9 @@ export default {
 				const res = await getMyClasses();
 				const data = (res && res.data) || {};
 				const list = Array.isArray(data.list) ? data.list : Array.isArray(data) ? data : [];
-				this.classList = list;
+				this.classList = this.dedupeClassList(list);
 				if (!this.selectedClassId && list.length) {
-					this.selectedClassId = this.getClassKey(list[0]);
+					this.selectedClassId = this.getClassKey(this.classList[0]);
 				}
 			} catch (e) {
 				this.classList = [];
@@ -286,6 +314,18 @@ export default {
 			if (!item) return '';
 			return item.class_id || item.classid || item.id || '';
 		},
+		dedupeClassList(list) {
+			if (!Array.isArray(list) || !list.length) return [];
+			const seen = new Set();
+			const result = [];
+			list.forEach((item) => {
+				const key = this.getClassKey(item) || this.getClassName(item);
+				if (!key || seen.has(String(key))) return;
+				seen.add(String(key));
+				result.push(item);
+			});
+			return result;
+		},
 		getClassName(item) {
 			if (!item) return '';
 			return item.class_name || item.name || item.title || `班级${this.getClassKey(item)}`;
@@ -305,7 +345,7 @@ export default {
 			this.tryLoadGallery(true);
 		},
 		tryLoadGallery(reset) {
-			if (!this.selectedChildId || !this.selectedClassId) {
+			if (!this.selectedChildId) {
 				if (reset) this.galleryList = [];
 				return;
 			}
@@ -318,7 +358,6 @@ export default {
 			try {
 				const res = await getChildGallery({
 					child_uid: this.selectedChildId,
-					class_id: this.selectedClassId,
 					page: this.galleryPage,
 					limit: this.galleryLimit
 				});
@@ -357,14 +396,16 @@ export default {
 			});
 		},
 		async loadCategoriesAndCourses() {
+			let categories = [];
 			try {
 				const res = await getCategoryList();
-				const list = (res && res.data) || [];
-				if (list.length) {
-					this.courseCategoryTitle = list[0].cate_name || '';
-					this.courseCid = list[0].id || 0;
+				categories = (res && res.data) || [];
+				if (categories.length) {
+					this.courseCategoryTitle = categories[0].cate_name || '';
+					this.courseCid = categories[0].id || 0;
 				}
 			} catch (e) {}
+			this.campCategories = categories;
 
 			if (!this.courseCid) {
 				this.courseCategoryTitle = this.courseCategoryTitle || '课程分类';
@@ -385,6 +426,89 @@ export default {
 			} catch (e) {
 				this.courseList = this.getMockCourses();
 			}
+		},
+		async loadCampProducts() {
+			try {
+				const res = await getProductslist({
+					page: 1,
+					limit: 100,
+					type: 1,
+					sid: 0
+				});
+				this.campProducts = Array.isArray(res && res.data) ? res.data : [];
+			} catch (e) {
+				this.campProducts = [];
+			}
+			const peripheralId = this.getCategoryIdByName('周边商品');
+			if (peripheralId) {
+				try {
+					const res = await getProductslist({
+						page: 1,
+						limit: 100,
+						type: 1,
+						cate_id: peripheralId,
+						sid: 0
+					});
+					this.$set(this.campCategoryProducts, '周边商品', Array.isArray(res && res.data) ? res.data : []);
+				} catch (e) {
+					this.$set(this.campCategoryProducts, '周边商品', []);
+				}
+			} else {
+				this.$set(this.campCategoryProducts, '周边商品', []);
+			}
+		},
+		getCategoryIdByName(name) {
+			const list = Array.isArray(this.campCategories) ? this.campCategories : [];
+			const match = list.find((item) => item && String(item.cate_name) === String(name));
+			if (match && match.id) return match.id;
+			const childMatch = list
+				.map((item) => (item && Array.isArray(item.children) ? item.children : []))
+				.reduce((acc, cur) => acc.concat(cur), [])
+				.find((item) => item && String(item.cate_name) === String(name));
+			return childMatch && childMatch.id ? childMatch.id : '';
+		},
+		getItemLabelNames(item) {
+			const list = Array.isArray(item && item.label_list) ? item.label_list : [];
+			return list
+				.map((label) => label && (label.name || label.title || label.label_name))
+				.filter(Boolean);
+		},
+		getItemCateIds(item) {
+			const raw = item && (item.cate_id || item.cid || item.category_id);
+			if (!raw) return [];
+			if (Array.isArray(raw)) return raw.map((id) => String(id));
+			return String(raw)
+				.split(',')
+				.map((id) => id.trim())
+				.filter(Boolean);
+		},
+		filterCampByLabel(label) {
+			const list = Array.isArray(this.campProducts) ? this.campProducts : [];
+			return list.filter((item) => {
+				const names = this.getItemLabelNames(item);
+				return names.some((name) => String(name).includes(label));
+			});
+		},
+		filterCampByCategoryName(name) {
+			const categoryId = this.getCategoryIdByName(name);
+			if (!categoryId) return [];
+			const list = Array.isArray(this.campProducts) ? this.campProducts : [];
+			return list.filter((item) => {
+				const ids = this.getItemCateIds(item);
+				return ids.some((id) => Number(id) === Number(categoryId));
+			});
+		},
+		getCampGroupItems(group) {
+			const byLabel = this.filterCampByLabel(group.label);
+			if (byLabel.length) return byLabel;
+			if (group.label === '周边商品') {
+				const byCategory =
+					this.campCategoryProducts['周边商品'] && this.campCategoryProducts['周边商品'].length
+						? this.campCategoryProducts['周边商品']
+						: this.filterCampByCategoryName(group.label);
+				return byCategory;
+			}
+			return byLabel;
 		},
 		getMockCourses() {
 			return [
@@ -436,6 +560,34 @@ export default {
 			});
 		},
 		tapAction(b) {
+			if (b === '活动评价') {
+				const current = this.currentCourseCard || {};
+				const productId = current.id || '';
+				if (!productId) {
+					return uni.showToast({
+						title: '暂无课程信息',
+						icon: 'none'
+					});
+				}
+				const name = encodeURIComponent(current.store_name || '');
+				return uni.navigateTo({
+					url: `/pages/course/activity_review/index?product_id=${productId}&name=${name}`
+				});
+			}
+			if (b === '近期动态') {
+				const classId = this.selectedClassId || '';
+				const childUid = this.selectedChildId || '';
+				if (!classId) {
+					return uni.showToast({
+						title: '请选择班级',
+						icon: 'none'
+					});
+				}
+				const className = encodeURIComponent(this.getClassName(this.classList.find((item) => this.getClassKey(item) === classId)));
+				return uni.navigateTo({
+					url: `/pages/course/class_dynamic/index?class_id=${classId}&child_uid=${childUid}&name=${className}`
+				});
+			}
 			uni.showToast({
 				title: '功能暂未开放',
 				icon: 'none'
@@ -592,6 +744,69 @@ export default {
 	transform: scale(0.992);
 }
 
+.camp-list {
+	display: flex;
+	flex-direction: column;
+	gap: 14rpx;
+}
+
+.camp-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 14rpx;
+}
+
+.camp-card {
+	position: relative;
+	height: 210rpx;
+	border-radius: 22rpx;
+	overflow: hidden;
+	background: rgba(255, 255, 255, 0.92);
+	border: 1rpx solid rgba(17, 59, 46, 0.08);
+}
+
+.camp-card-compact {
+	height: 190rpx;
+}
+
+.camp-card-bg {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.camp-card-scrim {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 150rpx;
+	background: linear-gradient(180deg, rgba(246, 251, 247, 0) 0%, rgba(246, 251, 247, 0.6) 42%, rgba(246, 251, 247, 0.92) 100%);
+}
+
+.camp-card-info {
+	position: absolute;
+	left: 16rpx;
+	right: 16rpx;
+	bottom: 12rpx;
+}
+
+.camp-card-title {
+	font-family: SemiBold;
+	font-size: 28rpx;
+	line-height: 38rpx;
+	color: #000000;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.camp-card:active {
+	transform: scale(0.992);
+}
+
 .hero-card {
 	position: relative;
 	height: 320rpx;
@@ -645,6 +860,41 @@ export default {
 	text-shadow: 0 8rpx 18rpx rgba(246, 251, 247, 0.85);
 }
 
+.hero-card-tabs {
+	position: absolute;
+	left: 18rpx;
+	right: 18rpx;
+	bottom: 128rpx;
+}
+
+.hero-tab-row {
+	display: flex;
+	gap: 12rpx;
+	white-space: nowrap;
+}
+
+.hero-tab {
+	padding: 0 20rpx;
+	height: 64rpx;
+	border-radius: 999rpx;
+	background: rgba(255, 255, 255, 0.86);
+	border: 1rpx solid rgba(17, 59, 46, 0.18);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.hero-tab.active {
+	background: rgba(86, 197, 150, 0.2);
+	border-color: rgba(86, 197, 150, 0.6);
+}
+
+.hero-tab-text {
+	font-size: 24rpx;
+	letter-spacing: 1rpx;
+	color: rgba(17, 59, 46, 0.85);
+}
+
 .hero-card-bottom {
 	position: absolute;
 	left: 18rpx;
@@ -690,6 +940,37 @@ export default {
 }
 
 .quick-action-text {
+	font-family: Regular;
+	font-size: 24rpx;
+	letter-spacing: 2rpx;
+	color: rgba(17, 59, 46, 0.78);
+}
+
+.feature-actions {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 14rpx;
+	position: absolute;
+	left: 18rpx;
+	right: 18rpx;
+	bottom: 18rpx;
+}
+
+.feature-action {
+	height: 90rpx;
+	border-radius: 20rpx;
+	background: rgba(255, 255, 255, 0.86);
+	border: 1rpx solid rgba(17, 59, 46, 0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.feature-action:active {
+	transform: scale(0.98);
+}
+
+.feature-action-text {
 	font-family: Regular;
 	font-size: 24rpx;
 	letter-spacing: 2rpx;

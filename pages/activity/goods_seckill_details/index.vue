@@ -1,5 +1,6 @@
 <template>
 	<view :style="colorStyle">
+		<menuIcon :showMenu="false" :opacity="opacity" />
 		<!-- 头部 -->
 
 		<!-- #ifndef APP-PLUS -->
@@ -14,23 +15,7 @@
 				</view>
 			</view>
 		</view>
-		<view id="home" class="home-nav acea-row row-center-wrapper" :class="[opacity > 0.5 ? 'on' : '']" :style="{ top: homeTop + 'rpx' }">
-			<view class="iconfont icon-fanhui2" @tap="returns"></view>
-			<!-- #ifdef MP -->
-			<view class="line"></view>
-			<view class="iconfont icon-gengduo5" @click="moreNav"></view>
-			<!-- #endif -->
-		</view>
 		<!-- #endif -->
-
-		<!-- #ifdef H5 -->
-		<view id="home" class="home-nav right acea-row row-center-wrapper" :class="[opacity > 0.5 ? 'on' : '']" :style="{ top: homeTop + 'rpx' }">
-			<!-- #ifdef  H5 -->
-			<view class="iconfont icon-gengduo2" @click="moreNav"></view>
-		</view>
-		<!-- #endif -->
-		<!-- #endif -->
-		<homeList :navH="navH" :returnShow="returnShow" :currentPage="currentPage" :sysHeight="sysHeight"></homeList>
 		<view class="product-con">
 			<scroll-view :scroll-top="scrollTop" scroll-y="true" scroll-with-animation="true" :style="'height:' + height + 'px;'" @scroll="scroll">
 				<view id="past0">
@@ -272,28 +257,26 @@ import { getUserInfo } from '@/api/user.js';
 import { TOKENNAME } from '@/config/app.js';
 // #endif
 import colors from '@/mixins/color.js';
-import menuIcon from '@/components/menuIcon.vue';
 import parser from '@/components/jyf-parser/jyf-parser';
 import cusPreviewImg from '@/components/cusPreviewImg/index.vue';
+import menuIcon from '@/components/menuIcon.vue';
 import { sharePoster } from '@/mixins/sharePoster';
 import { HTTP_REQUEST_URL } from '@/config/app';
-import homeList from '@/components/homeList';
 let sysHeight = uni.getSystemInfoSync().statusBarHeight + 'px';
 
 export default {
 	computed: mapGetters(['isLogin']),
 	mixins: [colors, sharePoster],
 	components: {
+		menuIcon,
 		productConSwiper,
 		productWindow: productWindow,
 		userEvaluation,
 		kefuIcon,
-		menuIcon,
 		countDown,
 		cusPreviewImg,
 		swiperPrevie,
 		parser,
-		homeList,
 		// #ifdef MP
 		authorize
 		// #endif
@@ -448,26 +431,11 @@ export default {
 		} else {
 			toLogin();
 		}
-		this.$nextTick(() => {
-			// #ifdef MP
-			const menuButton = uni.getMenuButtonBoundingClientRect();
-			const query = uni.createSelectorQuery().in(this);
-			query
-				.select('#home')
-				.boundingClientRect((data) => {
-					this.homeTop = menuButton.top * 2 + menuButton.height - data.height;
-				})
-				.exec();
-			// #endif
-		});
 	},
 	onNavigationBarButtonTap(e) {
 		this.currentPage = !this.currentPage;
 	},
 	methods: {
-		moreNav() {
-			this.currentPage = !this.currentPage;
-		},
 		// app分享
 		// #ifdef APP-PLUS
 		appShare(scene) {

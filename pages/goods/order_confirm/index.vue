@@ -1,5 +1,5 @@
 <template>
-	<view :style="colorStyle">
+<view :style="colorStyle" class="order-confirm">
 		<view class='order-submission'>
 			<view class="allAddress" :style="store_self_mention && is_shipping ? '':'padding-top:10rpx'"
 				v-if="!virtual_type && (!is_gift || is_gift == 2) && !bigclass">
@@ -1572,11 +1572,11 @@
 				padding: 0 6rpx;
 
 				&.orange {
-					background: #FE960F;
+					background: #7bd97a;
 				}
 
 				&.red {
-					background: #E93323;
+					background: #41b035;
 				}
 			}
 
@@ -1787,8 +1787,8 @@
 	}
 
 	.order-submission .wrapper .item .list .payItem.on {
-		border-color: #fc5445;
-		color: #e93323;
+		border-color: #41b035;
+		color: #41b035;
 	}
 
 	.order-submission .wrapper .item .list .payItem .name {
@@ -1804,7 +1804,7 @@
 		border-radius: 50%;
 		text-align: center;
 		line-height: 44rpx;
-		background-color: #fe960f;
+		background-color: #41b035;
 		color: #fff;
 		font-size: 30rpx;
 		margin-right: 15rpx;
@@ -1912,5 +1912,10 @@
 
 	.fontC {
 		color: grey;
+	}
+
+	.order-confirm {
+		--view-theme: #41b035;
+		--view-minorColorT: rgba(65, 176, 53, 0.12);
 	}
 </style>
