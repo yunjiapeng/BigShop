@@ -1,7 +1,11 @@
 <template>
 	<view :style="colorStyle" class="review-page">
-		<view class="review-header">
-			<view class="review-title">{{ pageTitle }}</view>
+		<view class="page-nav">
+			<view class="nav-back" @click="goBack">
+				<text class="iconfont icon-xiangzuo"></text>
+			</view>
+			<view class="nav-title">{{ pageTitle }}</view>
+			<view class="nav-space"></view>
 		</view>
 		<view class="evaluate-list">
 			<userEvaluation :reply="reply" :showStar="false"></userEvaluation>
@@ -32,6 +36,7 @@
 
 <script>
 import { getReplyList } from '@/api/store.js';
+import { getOrderList, orderComment } from '@/api/order.js';
 import userEvaluation from '@/components/userEvaluation';
 import colors from '@/mixins/color.js';
 import { HTTP_REQUEST_URL } from '@/config/app';
@@ -56,7 +61,10 @@ export default {
 			page: 1,
 			limit: 20,
 			content: '',
-			pageTitle: this.$t(`活动评价`)
+			pageTitle: this.$t(`活动评价`),
+			orderUnique: '',
+			orderId: '',
+			orderLoading: false
 		};
 	},
 	onLoad(options) {
@@ -78,11 +86,53 @@ export default {
 	onShow() {
 		if (this.isLogin) {
 			this.getProductReplyList(true);
+			this.loadOrderTarget();
 		} else {
 			toLogin();
 		}
 	},
 	methods: {
+		goBack() {
+			uni.navigateBack({
+				delta: 1
+			});
+		},
+		loadOrderTarget() {
+			if (this.orderLoading || !this.product_id) return;
+			this.orderLoading = true;
+			this.orderUnique = '';
+			this.orderId = '';
+			getOrderList({
+				type: 3,
+				page: 1,
+				limit: 50
+			})
+				.then((res) => {
+					const list = Array.isArray(res.data) ? res.data : [];
+					const productId = Number(this.product_id);
+					for (let i = 0; i < list.length; i += 1) {
+						const order = list[i] || {};
+						const cartInfo = Array.isArray(order.cartInfo) ? order.cartInfo : [];
+						for (let j = 0; j < cartInfo.length; j += 1) {
+							const item = cartInfo[j] || {};
+							const productInfo = item.productInfo || {};
+							const itemProductId = Number(
+								productInfo.product_id || productInfo.id || item.product_id || item.productId
+							);
+							if (itemProductId && itemProductId === productId) {
+								this.orderUnique = item.unique || '';
+								this.orderId = order.order_id || '';
+								break;
+							}
+						}
+						if (this.orderUnique) break;
+					}
+					this.orderLoading = false;
+				})
+				.catch(() => {
+					this.orderLoading = false;
+				});
+		},
 		getProductReplyList(reset) {
 			if (this.loadend && !reset) return;
 			if (this.loading) return;
@@ -120,11 +170,38 @@ export default {
 					title: this.$t(`请填写评价内容`)
 				});
 			}
-			uni.showToast({
-				title: this.$t(`评论提交接口待接入`),
-				icon: 'none'
+			if (!this.orderUnique) {
+				return this.$util.Tips({
+					title: this.$t(`暂无可评价订单`)
+				});
+			}
+			const payload = {
+				comment: this.content.trim(),
+				product_score: 5,
+				service_score: 5,
+				pics: [],
+				unique: this.orderUnique
+			};
+			uni.showLoading({
+				title: this.$t(`正在发布评论`)
 			});
-			this.content = '';
+			orderComment(payload)
+				.then(() => {
+					uni.hideLoading();
+					this.$util.Tips({
+						title: this.$t(`感谢您的评价`),
+						icon: 'success'
+					});
+					this.content = '';
+					this.getProductReplyList(true);
+					this.loadOrderTarget();
+				})
+				.catch((err) => {
+					uni.hideLoading();
+					this.$util.Tips({
+						title: err || this.$t(`评论提交失败`)
+					});
+				});
 		}
 	},
 	onReachBottom() {
@@ -136,17 +213,36 @@ export default {
 <style lang="scss" scoped>
 .review-page {
 	min-height: 100vh;
-	background-color: #fff;
+	background-color: #f6fbf7;
 }
 
-.review-header {
-	padding: 24rpx 30rpx 12rpx;
+.page-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 24rpx 30rpx 16rpx;
 }
 
-.review-title {
+.nav-back {
+	width: 56rpx;
+	height: 56rpx;
+	border-radius: 28rpx;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1rpx solid rgba(17, 59, 46, 0.12);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: rgba(17, 59, 46, 0.9);
+}
+
+.nav-title {
 	font-family: SemiBold;
 	font-size: 32rpx;
 	color: rgba(17, 59, 46, 0.9);
+}
+
+.nav-space {
+	width: 56rpx;
 }
 
 .review-form {

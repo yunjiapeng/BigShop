@@ -38,7 +38,7 @@
 						<view class="section-title">班级动态</view>
 						<emptyPage v-if="!isLogin" :title="$t(`请先登录查看班级动态`)"></emptyPage>
 						<view v-else>
-							<view class="hero-card" v-if="currentCourseCard" @click="viewCourse(currentCourseCard)">
+							<view class="hero-card" v-if="currentCourseCard">
 								<image
 									class="hero-card-bg"
 									:src="currentCourseCard.recommend_image || currentCourseCard.image || officialCover"
@@ -577,15 +577,22 @@ export default {
 			if (b === '近期动态') {
 				const classId = this.selectedClassId || '';
 				const childUid = this.selectedChildId || '';
-				if (!classId) {
+				if (!childUid) {
 					return uni.showToast({
-						title: '请选择班级',
+						title: '请选择孩子',
 						icon: 'none'
 					});
 				}
-				const className = encodeURIComponent(this.getClassName(this.classList.find((item) => this.getClassKey(item) === classId)));
+				const className = encodeURIComponent(
+					this.getClassName(this.classList.find((item) => this.getClassKey(item) === classId))
+				);
 				return uni.navigateTo({
 					url: `/pages/course/class_dynamic/index?class_id=${classId}&child_uid=${childUid}&name=${className}`
+				});
+			}
+			if (b === '联系老师') {
+				return uni.navigateTo({
+					url: `/pages/course/contact_teacher`
 				});
 			}
 			uni.showToast({

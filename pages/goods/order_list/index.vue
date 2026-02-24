@@ -175,7 +175,9 @@ export default {
 			initIn: false,
 			isAuto: false, //没有授权的不会自动授权
 			isShowAuth: false, //是否隐藏授权
-			uid: 0
+			uid: 0,
+			verifyOnly: false,
+			verifyLabels: ['家长课堂', '亲子活动']
 		};
 	},
 	computed: mapGetters(['isLogin']),
@@ -184,6 +186,10 @@ export default {
 	 */
 	onLoad: function (options) {
 		if (options.status) this.orderStatus = options.status;
+		if (options.verify == 1 || options.verify === '1') {
+			this.verifyOnly = true;
+			this.orderStatus = 1;
+		}
 		let EnOptions = wx.getEnterOptionsSync();
 		if (EnOptions.scene == '1038' && EnOptions.referrerInfo.appId == 'wxef277996acc166c3' && this.initIn) {
 			// 代表从收银台小程序返回
@@ -334,6 +340,7 @@ export default {
 		 * 切换类型
 		 */
 		statusClick: function (status) {
+			if (this.verifyOnly) return;
 			if (status == this.orderStatus) return;
 			this.orderStatus = status;
 			this.loadend = false;
@@ -358,6 +365,21 @@ export default {
 				.then((res) => {
 					let list = res.data || [];
 					let loadend = list.length < that.limit;
+					if (that.verifyOnly) {
+						let labels = that.verifyLabels;
+						list = list.filter((item) => {
+							let statusMatch =
+								(item._status && item._status._type == 1 && item.shipping_type == 2) ||
+								(item._status && item._status._type == 5 && item.status == 0);
+							if (!statusMatch) return false;
+							let cartInfo = item.cartInfo || [];
+							return cartInfo.some((cartItem) => {
+								let labelList = cartItem.productInfo && cartItem.productInfo.label_list;
+								if (!Array.isArray(labelList)) return false;
+								return labelList.some((label) => labels.includes(label.name));
+							});
+						});
+					}
 					that.orderList = that.$util.SplitArray(list, that.orderList);
 					that.$set(that, 'orderList', that.orderList);
 					that.loadend = loadend;

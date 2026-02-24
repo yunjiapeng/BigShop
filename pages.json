@@ -78,6 +78,13 @@
 				"navigationBarTitleText": "班级动态",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/course/contact_teacher",
+			"style": {
+				"navigationBarTitleText": "联系老师",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 	"subPackages": [{
