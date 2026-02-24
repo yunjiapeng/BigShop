@@ -4,9 +4,9 @@
 		<view class="articleList" :class="{
 			large: dataConfig.styleConfig.tabVal == 0,
 			small: dataConfig.styleConfig.tabVal == 2,
-		}" v-if="articleList.length">
-			<navigator :url='"/pages/extension/news_details/index?id="+item.id' hover-class="none" v-for="(item,index) in articleList" :key="index" :style="[articleItemStyle]" class="item">
-				<view v-if="dataConfig.styleConfig.tabVal != 0" class="image-wrap">
+		}" v-if="filteredArticleList.length">
+			<component :is="disableNavigate ? 'view' : 'navigator'" v-for="(item,index) in filteredArticleList" :key="index" v-bind="navProps(item)" :style="[articleItemStyle]" class="item" @click="handleItemClick(item)">
+				<view v-if="dataConfig.styleConfig.tabVal != 0" class="image-wrap" :style="[imageWrapStyle]">
 					<easy-loadimage :imageSrc="item.image_input[0]" :borderRadius="borderRadius" width="100%" height="100%"></easy-loadimage>
 				</view>
 				<view class="text-wrap">
@@ -16,23 +16,12 @@
 							line2: dataConfig.styleConfig.tabVal == 1,
 						}" :style="[titleStyle]">{{ item.title }}</view>
 					</view>
-					<view v-if="dataConfig.styleConfig.tabVal == 0" class="image-wrap">
+					<view v-if="dataConfig.styleConfig.tabVal == 0" class="image-wrap" :style="[imageWrapStyle]">
 						<easy-loadimage :imageSrc="item.image_input[0]" :borderRadius="borderRadius" width="100%" height="100%"></easy-loadimage>
 					</view>
-					<view class="time-wrap" :style="[numberStyle]">
-						<view v-if="dataConfig.checkboxList.type.includes(0)" class="time time-wrap-item" :style="[timeStyle]">{{ item.add_time }}</view>
-						<view v-else class="time time-wrap-item"></view>
-						<view class="like-wrap time-wrap-item">
-							<view v-if="dataConfig.checkboxList.type.includes(1)" class="view acea-row row-middle" :class="!isLike?'on':''">
-								<text class="iconfont icon-liulan" :style="[iconEyesStyle]"></text>{{ item.visit }}
-							</view>
-							<!-- <view v-if="dataConfig.checkboxList.type.includes(2)" class="like">
-								<text class="iconfont icon-ic_Like" :style="[iconLikeStyle]"></text>{{ item.likes }}
-							</view> -->
-						</view>
-					</view>
+					<view class="time-wrap"></view>
 				</view>
-			</navigator>
+			</component>
 		</view>
 	</view>
 </template>
@@ -52,6 +41,14 @@
 			isSortType: {
 				type: String | Number,
 				default: 0
+			},
+			disableNavigate: {
+				type: Boolean,
+				default: false
+			},
+			excludeIds: {
+				type: Array,
+				default: () => []
 			}
 		},
 		data() {
@@ -65,13 +62,21 @@
 				like = this.dataConfig.checkboxList.type.includes(2);
 				return like
 			},
-			borderRadius() {
-				let borderRadius = `${this.dataConfig.filletImg.val * 2}rpx`;
-				if (this.dataConfig.filletImg.type) {
+			unifiedRadius() {
+				const extra = 4;
+				let borderRadius = `${(this.dataConfig.fillet.val + extra) * 2}rpx`;
+				if (this.dataConfig.fillet.type) {
 					borderRadius =
-						`${this.dataConfig.filletImg.valList[0].val * 2}rpx ${this.dataConfig.filletImg.valList[1].val * 2}rpx ${this.dataConfig.filletImg.valList[3].val * 2}rpx ${this.dataConfig.filletImg.valList[2].val * 2}rpx`;
+						`${(this.dataConfig.fillet.valList[0].val + extra) * 2}rpx ${(this.dataConfig.fillet.valList[1].val + extra) * 2}rpx ${(this.dataConfig.fillet.valList[3].val + extra) * 2}rpx ${(this.dataConfig.fillet.valList[2].val + extra) * 2}rpx`;
 				}
 				return borderRadius;
+			},
+			filteredArticleList() {
+				const excludeSet = new Set((this.excludeIds || []).map((id) => String(id)));
+				return (this.articleList || []).filter((item) => !excludeSet.has(String(item.id)));
+			},
+			borderRadius() {
+				return this.unifiedRadius;
 			},
 			timeStyle() {
 				return {
@@ -94,14 +99,18 @@
 				};
 			},
 			articleItemStyle() {
-				let borderRadius = `${this.dataConfig.fillet.val * 2}rpx`;
-				if (this.dataConfig.fillet.type) {
-					borderRadius =
-						`${this.dataConfig.fillet.valList[0].val * 2}rpx ${this.dataConfig.fillet.valList[1].val * 2}rpx ${this.dataConfig.fillet.valList[3].val * 2}rpx ${this.dataConfig.fillet.valList[2].val * 2}rpx`;
-				}
+				let borderRadius = this.unifiedRadius;
 				return {
 					'border-radius': borderRadius,
-					'background': `linear-gradient(90deg, ${this.dataConfig.bgColor.color[0].item} 0%, ${this.dataConfig.bgColor.color[1].item} 100%)`,
+					'background': '#FFFFFF',
+					'box-sizing': 'border-box',
+					'border': '2rpx solid var(--panel-border, #B7DBB6)',
+				};
+			},
+			imageWrapStyle() {
+				return {
+					'border-radius': this.unifiedRadius,
+					'overflow': 'hidden',
 				};
 			},
 			articleWrapperStyle() {
@@ -113,7 +122,7 @@
 			},
 			titleStyle() {
 				let styleObject = {
-					'color': this.dataConfig.nameColor.color[0].item,
+					'color': '#000000',
 				};
 				if (!this.dataConfig.nameConfig.tabVal) {
 					styleObject['font-weight'] = 'bold';
@@ -125,19 +134,31 @@
 			this.getCidArticle();
 		},
 		methods: {
+			navProps(item) {
+				if (this.disableNavigate) return {};
+				return {
+					url: '/pages/extension/news_details/index?id=' + item.id,
+					'hover-class': 'none'
+				};
+			},
+			handleItemClick(item) {
+				if (this.disableNavigate) {
+					this.$emit('open', item);
+				}
+			},
 			getCidArticle: function() {
 				let limit = this.$config.LIMIT;
 				getArticleList(this.dataConfig.selectConfig.activeValue || 0, {
 					page: 1,
 					// limit: this.dataConfig.numConfig.val >= limit ? limit : this.dataConfig.numConfig.val
-					limit: this.dataConfig.numConfig.val
+					limit: Math.max(limit, 9999)
 				}).then(res => {
 					if (this.dataConfig.styleConfig.tabVal == 2) {
 						res.data.forEach(item => {
 							item.add_time = dayjs(item.add_time).format('MM-DD HH:mm')
 						})
 					}
-					this.articleList = res.data;
+					this.articleList = res.data || [];
 				});
 			},
 		}
@@ -180,10 +201,10 @@
 			flex-wrap: nowrap;
 			height: 28rpx;
 			padding: 0 6rpx;
-			border: 1rpx solid #E93323;
+			border: 0;
 			border-radius: 6rpx;
 			font-size: 20rpx;
-			color: #E93323;
+			color: #666666;
 		}
 
 		.image-wrap {

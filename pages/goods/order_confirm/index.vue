@@ -1,8 +1,8 @@
 <template>
-	<view :style="colorStyle">
+<view :style="colorStyle" class="order-confirm">
 		<view class='order-submission'>
 			<view class="allAddress" :style="store_self_mention && is_shipping ? '':'padding-top:10rpx'"
-				v-if="!virtual_type && (!is_gift || is_gift == 2)">
+				v-if="!virtual_type && (!is_gift || is_gift == 2) && !bigclass">
 				<view class="nav acea-row">
 					<view class="item font-num" :class="shippingType == 0 ? 'on' : 'on2'" @tap="addressType(0)"
 						v-if='store_self_mention && is_shipping'>
@@ -488,7 +488,13 @@
 				integral_open: false,
 				jumpData: {},
 				is_gift: 0, // 1 购买的礼品 2领取礼品
-				giftData: null
+				giftData: null,
+				bigclass: 0,
+				classtype: '',
+				startdate: '',
+				deadline: '',
+				bigclassChildUid: '',
+				bigclassChildUids: []
 			};
 		},
 		computed: mapGetters(['isLogin']),
@@ -530,6 +536,12 @@
 			this.invChecked = options.invoice_id || '';
 			this.header_type = options.header_type || '1';
 			this.couponTitle = options.couponTitle || this.$t(`请选择`)
+			this.bigclass = Number(options.bigclass || 0);
+			this.classtype = options.classtype || '';
+			this.startdate = options.startdate || '';
+			this.deadline = options.deadline || '';
+			this.bigclassChildUid = options.bigclass_child_uid || '';
+			this.bigclassChildUids = options.child_uids ? options.child_uids.split(',').filter(item => item) : [];
 			if (options.invoice_id) {
 				let name = ''
 				name += options.header_type == 1 ? this.$t(`个人`) : this.$t(`企业`);
@@ -739,6 +751,10 @@
 					shipping_type: parseInt(shippingType) + 1,
 					payType: this.payType
 				}
+				const courseParams = this.buildCourseParams();
+				if (Object.keys(courseParams).length) Object.assign(data, courseParams);
+				const childList = this.getCourseChildList();
+				if (childList.length) data.bigclass_child_uid = childList[0];
 				if (this.is_gift) data.is_gift = this.is_gift
 				postOrderComputed(this.orderKey, data).then(res => {
 					let result = res.data.result;
@@ -751,6 +767,32 @@
 						this.$set(this.priceGroup, 'storePostageDiscount', result.storePostageDiscount);
 					}
 				})
+			},
+			buildCourseParams() {
+				const data = {};
+			if (this.bigclass) data.bigclass = this.bigclass;
+			if (this.classtype) data.classtype = this.classtype;
+			if (this.startdate) data.startdate = this.startdate;
+			if (this.deadline) data.deadline = this.deadline;
+			if (this.bigclassChildUid) data.bigclass_child_uid = this.bigclassChildUid;
+				return data;
+			},
+			getCourseChildList() {
+				return (this.bigclassChildUids && this.bigclassChildUids.length
+					? this.bigclassChildUids
+					: (this.bigclassChildUid ? [this.bigclassChildUid] : [])
+				).filter(item => item);
+			},
+			getCourseBackfillKey(orderId) {
+				return `course_order_backfill_${orderId}`;
+			},
+			saveCourseBackfill(orderId) {
+				const data = this.buildCourseParams();
+				if (this.bigclassChildUids && this.bigclassChildUids.length) {
+					data.bigclass_child_uids = this.bigclassChildUids;
+				}
+				if (!Object.keys(data).length) return;
+				uni.setStorageSync(this.getCourseBackfillKey(orderId), JSON.stringify(data));
 			},
 			addressType(e) {
 				let index = e;
@@ -912,6 +954,13 @@
 					addressId: that.addressId,
 					shipping_type: that.shippingType + 1
 				}
+				const courseParams = this.buildCourseParams();
+				if (Object.keys(courseParams).length) Object.assign(data, courseParams);
+				const childList = (this.bigclassChildUids && this.bigclassChildUids.length
+					? this.bigclassChildUids
+					: (this.bigclassChildUid ? [this.bigclassChildUid] : [])
+				).filter(item => item);
+				if (childList.length) data.bigclass_child_uid = childList[0];
 				if (that.is_gift) data.is_gift = that.is_gift
 				orderConfirm(data).then(res => {
 					that.$set(that, 'userInfo', res.data.userInfo);
@@ -1109,19 +1158,33 @@
 					tempform.submit();
 				})
 			},
-			payment(data) {
+			buildEmptyAddress() {
+				return {
+					real_name: '',
+					phone: '',
+					province: '',
+					city: '',
+					district: '',
+					detail: '',
+					city_id: 0
+				};
+			},
+			async payment(data) {
 				let that = this;
-				orderCreate(that.orderKey, data).then(res => {
-					let url = `/pages/goods/cashier/index?order_id=${res.data.result.orderId}&from_type=order`
+				try {
+					const res = await orderCreate(that.orderKey, data);
+					const orderId = res.data.result.orderId;
+					that.saveCourseBackfill(orderId);
+					let url = `/pages/goods/cashier/index?order_id=${orderId}&from_type=order`
 					uni.reLaunch({
 						url
 					})
-				}).catch(err => {
+				} catch (err) {
 					uni.hideLoading();
 					return that.$util.Tips({
 						title: err
 					});
-				});
+				}
 			},
 			clickTextArea() {
 				this.$refs.textarea.focus()
@@ -1129,7 +1192,7 @@
 			SubOrder(e) {
 				let that = this,
 					data = {};
-				if (!that.addressId && !that.shippingType && !that.virtual_type && !that.is_gift) return that.$util.Tips({
+				if (!that.addressId && !that.shippingType && !that.virtual_type && !that.is_gift && !that.bigclass) return that.$util.Tips({
 					title: that.$t(`请选择收货地址`)
 				});
 				if (that.shippingType == 1) {
@@ -1222,12 +1285,20 @@
 					// #ifdef H5
 					quitUrl: location.protocol + '//' + location.hostname +
 						'/pages/goods/order_pay_status/index?' +
-						'&type=3' + '&totalPrice=' + this.totalPrice
+						'&type=3' + '&totalPrice=' + this.totalPrice,
 					// #endif
 					// #ifdef APP-PLUS
 					quitUrl: '/pages/goods/order_details/index?order_id=' + this.order_id
 					// #endif
 				};
+				if (that.bigclass) {
+					data.addressId = 0;
+					data.address = that.buildEmptyAddress();
+				}
+				const courseParams = this.buildCourseParams();
+				if (Object.keys(courseParams).length) Object.assign(data, courseParams);
+				const childList = this.getCourseChildList();
+				if (childList.length) data.bigclass_child_uid = childList[0];
 				if (that.is_gift) data.is_gift = that.is_gift
 				if (data.payType == 'yue' && parseFloat(that.userInfo.now_money) < parseFloat(that.totalPrice))
 					return that.$util.Tips({
@@ -1501,11 +1572,11 @@
 				padding: 0 6rpx;
 
 				&.orange {
-					background: #FE960F;
+					background: #7bd97a;
 				}
 
 				&.red {
-					background: #E93323;
+					background: #41b035;
 				}
 			}
 
@@ -1716,8 +1787,8 @@
 	}
 
 	.order-submission .wrapper .item .list .payItem.on {
-		border-color: #fc5445;
-		color: #e93323;
+		border-color: #41b035;
+		color: #41b035;
 	}
 
 	.order-submission .wrapper .item .list .payItem .name {
@@ -1733,7 +1804,7 @@
 		border-radius: 50%;
 		text-align: center;
 		line-height: 44rpx;
-		background-color: #fe960f;
+		background-color: #41b035;
 		color: #fff;
 		font-size: 30rpx;
 		margin-right: 15rpx;
@@ -1841,5 +1912,10 @@
 
 	.fontC {
 		color: grey;
+	}
+
+	.order-confirm {
+		--view-theme: #41b035;
+		--view-minorColorT: rgba(65, 176, 53, 0.12);
 	}
 </style>

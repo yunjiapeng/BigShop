@@ -1,34 +1,18 @@
 <template>
 	<view class="product-con" :style="colorStyle">
 		<view class="product-con">
-			<!-- #ifndef APP-PLUS -->
 			<view class="navbar" :style="{ height: navH + 'rpx', opacity: opacity }">
 				<view class="navbarH" :style="'height:' + navH + 'rpx;'">
 					<view class="navbarCon acea-row row-center-wrapper" :style="{ paddingRight: navbarRight - 20 + 'px' }">
+						<view class="navbarBack" @tap="returns">
+							<text class="iconfont icon-xiangzuo"></text>
+						</view>
 						<view class="header acea-row row-center-wrapper">
 							<view class="item" :class="navActive === index ? 'on' : ''" v-for="(item, index) in navList" :key="index" @tap="tap(index)">{{ item }}</view>
 						</view>
 					</view>
 				</view>
 			</view>
-			<!-- #endif -->
-			<!-- <view class='iconfont icon-xiangzuo' :style="{top:navH/2+'rpx',opacity:(1-opacity)}" @tap='returns'></view> -->
-			<!-- #ifndef APP-PLUS -->
-			<view id="home" class="home acea-row row-center-wrapper" :class="[opacity > 0.5 ? 'on' : '']" :style="{ top: homeTop + 'rpx' }">
-				<view class="iconfont icon-fanhui2" @tap="returns"></view>
-				<!-- #ifdef MP -->
-				<view class="line"></view>
-				<view class="iconfont icon-gengduo5" @click="moreNav"></view>
-				<!-- #endif -->
-			</view>
-			<!-- #endif -->
-			<!-- #ifdef H5 -->
-			<view id="home" class="home right acea-row row-center-wrapper" :class="[opacity > 0.5 ? 'on' : '']" :style="{ top: homeTop + 'rpx' }">
-				<!-- #endif -->
-				<!-- #ifdef H5 -->
-				<view class="iconfont icon-gengduo2" @click="moreNav"></view>
-			</view>
-			<!-- #endif -->
 			<homeList :navH="navH" :returnShow="returnShow" :currentPage="currentPage" :sysHeight="sysHeight"></homeList>
 			<view>
 				<scroll-view :scroll-top="scrollTop" scroll-y="true" scroll-with-animation="true" :style="'height:' + height + 'px;'" @scroll="scroll">
@@ -44,39 +28,10 @@
 							@showSwiperImg="showSwiperImg"
 						></productConSwiper>
 						<view class="wrapper">
-							<view class="share acea-row row-between row-bottom">
-								<view class="money font-color">
-									<text class="text">{{ $t(`到手价`) }}</text>
-									<baseMoney class="mr-12" :money="realPriceData.real_price" symbolSize="24" integerSize="40" decimalSize="24" weight color="var(--view-theme)"></baseMoney>
-									<text class="text text--w111-333">{{ $t(`售价`) }}</text>
-									<baseMoney class="mr-12" :money="realPriceData.price" symbolSize="24" integerSize="24" decimalSize="24" weight color="#333"></baseMoney>
-									<view
-										class="vip-money"
-										v-if="storeInfo.vip_price && storeInfo.vip_price > 0 && storeInfo.is_vip == 1 && svip_price_open == 1 && realPriceData.user_is_member == 0"
-									>
-										<view class="svip-tag">SVIP</view>
-										<view class="">{{ $t(`￥`) }}{{ realPriceData.member_price }}</view>
-									</view>
-								</view>
-								<view class="iconfont icon-fenxiang" @click="listenerActionSheet"></view>
-							</view>
+							
 							<view class="introduce" v-text="storeInfo.store_name || ''"></view>
-							<view class="limit_good" v-if="storeInfo.limit_type > 0">
-								{{ storeInfo.limit_type == 1 ? $t(`单次限购`) : $t(`永久限购`) }}{{ storeInfo.limit_num }}{{ $t(storeInfo.unit_name) }}
-								<text class="line" v-if="storeInfo.limit_type > 0 && storeInfo.min_qty > 1">|</text>
-								<text v-if="storeInfo.min_qty > 1">{{ $t(`起购`) }}{{ storeInfo.min_qty + storeInfo.unit_name }}</text>
-							</view>
-							<view class="label acea-row row-between-wrapper" style="padding-bottom: 20rpx">
-								<view class="delete-line">{{ $t(`￥`) }}{{ ot_price || 0 }}</view>
-								<view class="">
-									{{ $t(`库存`) }} : {{ attr.productSelect.stock || 0 }}
-									{{ $t(storeInfo.unit_name) || '' }}
-								</view>
-								<view class="">
-									{{ $t(`销量`) }} : {{ storeInfo.fsales || 0 }}
-									{{ $t(storeInfo.unit_name) || '' }}
-								</view>
-							</view>
+							
+							
 							<!-- 商品标签 -->
 							<view class="flex flex-wrap mt-24 p-x-15" v-if="storeInfo.label_list && storeInfo.label_list.length">
 								<BaseTag
@@ -169,7 +124,7 @@
 								<view class="flexs" v-show="!storeInfo.attrPics.length">
 									<image :src="item.image" v-for="(item, index) in skuArr.slice(0, 4)" :key="index" class="attrImg"></image>
 								</view>
-								<view class="switchTxt">{{ $t(`共`) }}{{ skuArr.length }} {{ $t(`种规格可选`) }}</view>
+								<view class="switchTxt">{{ $t(`共`) }}{{ skuArr.length }} {{ $t(`种课程周期可选`) }}</view>
 							</view>
 						</view>
 						<!-- 参数 -->
@@ -275,81 +230,12 @@
 			</view>
 
 			<view class="footer acea-row row-between-wrapper" :class="{ eject: storeInfo.id }">
-				<!-- <button open-type="contact" hover-class='none' class='item'>
-						<view class='iconfont icon-kefu'></view>
-						<view>客服</view>
-					</button> -->
-
-				<navigator v-if="!is_gift" hover-class="none" class="item" open-type="reLaunch" url="/pages/index/index">
-					<view class="iconfont icon-shouye6"></view>
-					<view class="p_center">{{ $t(`首页`) }}</view>
-				</navigator>
-				<view @click="setCollect" class="item">
-					<view class="iconfont icon-shoucang1" v-if="storeInfo.userCollect"></view>
-					<view class="iconfont icon-shoucang" v-else></view>
-					<view class="p_center">{{ $t(`收藏`) }}</view>
-				</view>
-				<view class="animated item" :class="animated == true ? 'bounceIn' : ''" @click="goCart">
-					<view class="iconfont icon-gouwuche1">
-						<text class="num bg-color" v-if="parseFloat(CartCount) > 0">{{ CartCount || 0 }}</text>
-					</view>
-					<view class="p_center">{{ $t(`购物车`) }}</view>
-				</view>
-				<view v-if="is_gift" @click="goGift()" class="item">
-					<image class="gift-icon" src="@/static/images/gift-icon.png" mode=""></image>
-					<view class="p_center">{{ $t(`送礼物`) }}</view>
-				</view>
-				<view v-if="noGoods" class="presale">
-					<view class="acea-row">
-						<form class="bnts bg-color-hui">
-							<button class="bnts bg-color-hui" form-type="submit">{{ $t(`暂无产品`) }}</button>
-						</form>
-					</view>
-				</view>
-				<view v-else>
-					<view v-if="!storeInfo.presale">
-						<view class="bnt acea-row" :class="!storeInfo.cart_button ? 'virbnt' : ''" v-if="attr.productSelect.stock <= 0">
-							<form v-if="storeInfo.cart_button" @submit="joinCart" class="joinCart bnts" :class="!storeInfo.cart_button ? 'virbnt' : ''">
-								<button class="joinCart bnts" form-type="submit">
-									{{ $t(`加入购物车`) }}
-								</button>
-							</form>
-							<form class="buy bnts bg-color-hui">
-								<button class="buy bnts bg-color-hui" form-type="submit" :class="!storeInfo.cart_button ? 'virbnt' : ''">
-									{{ $t(`已售罄`) }}
-								</button>
-							</form>
-						</view>
-						<view class="bnt acea-row" v-else>
-							<form v-if="storeInfo.cart_button" @submit="joinCart" class="joinCart bnts">
-								<button class="joinCart bnts" form-type="submit">
-									{{ $t(`加入购物车`) }}
-								</button>
-							</form>
-							<form @submit="goBuy" class="buy bnts" :class="!storeInfo.cart_button ? 'virbnt' : ''">
-								<button class="buy bnts" :class="!storeInfo.cart_button ? 'virbnt' : ''" form-type="submit">
-									{{ $t(`立即购买`) }}
-								</button>
-							</form>
-						</view>
-					</view>
-					<view class="presale" v-else>
-						<view class="acea-row" v-if="presale_pay_status === 1 || presale_pay_status === 3">
-							<form class="bnts bg-color-hui">
-								<button class="bnts bg-color-hui" form-type="submit">{{ presale_pay_status === 1 ? $t(`未开始`) : $t(`已结束`) }}</button>
-							</form>
-						</view>
-						<view class="acea-row" v-else-if="attr.productSelect.quota <= 0 || attr.productSelect.quota < attr.productSelect.cart_num">
-							<form class="bnts bg-color-hui">
-								<button class="bnts bg-color-hui" form-type="submit">{{ $t(`已售罄`) }}</button>
-							</form>
-						</view>
-						<view class="bnts acea-row" v-else-if="presale_pay_status === 2">
-							<form @submit="goBuy" class="bnts">
-								<button class="bnts" form-type="submit">{{ $t(`立即购买`) }}</button>
-							</form>
-						</view>
-					</view>
+				<view class="bnt acea-row">
+					<form @submit="goBuy" class="buy bnts">
+						<button class="buy bnts" form-type="submit">
+							{{ isCourseProduct ? $t(`购买课程`) : $t(`购买`) }}
+						</button>
+					</form>
 				</view>
 
 				<!-- 	<view v-else>
@@ -454,7 +340,6 @@
 			<view class="share-box" v-if="H5ShareBox">
 				<image :src="imgHost + '/statics/images/share-info.png'" @click="H5ShareBox = false"></image>
 			</view>
-			<kefuIcon :ids="parseInt(id)" :routineContact="routineContact" :storeInfo="storeInfo" :goodsCon="1"></kefuIcon>
 			<!-- #ifdef H5 || APP-PLUS -->
 			<zb-code
 				ref="qrcode"
@@ -496,8 +381,6 @@ import couponListWindow from '@/components/couponListWindow';
 import productWindow from '@/components/productWindow';
 import userEvaluation from '@/components/userEvaluation';
 import shareRedPackets from '@/components/shareRedPackets';
-import kefuIcon from '@/components/kefuIcon';
-import menuIcon from '@/components/menuIcon.vue';
 import { updateURLParameter } from '@/utils';
 import ClipboardJS from '@/plugin/clipboard/clipboard.js';
 // #ifdef MP
@@ -521,8 +404,6 @@ export default {
 		productWindow,
 		userEvaluation,
 		shareRedPackets,
-		kefuIcon,
-		menuIcon,
 		cusPreviewImg,
 		swiperPrevie,
 		// #ifdef MP
@@ -638,6 +519,8 @@ export default {
 			svip_price_open: 1,
 			is_gift: 0, // 是否支持送礼
 			isGiftOrder: 0,
+			isCourseProduct: false,
+			courseProductIds: [17, 15, 13, 11, 10, 9],
 			realPriceData: {
 				is_vip: 0,
 				price: 0,
@@ -665,7 +548,7 @@ export default {
 			immediate: true
 		}
 	},
-	onLoad(options) {
+		onLoad(options) {
 		let that = this;
 		var pages = getCurrentPages();
 		that.returnShow = pages.length === 1 ? false : true;
@@ -679,6 +562,7 @@ export default {
 		that.navH = 30;
 		// #endif
 		that.id = options.id;
+		that.isCourseProduct = this.isCourseId(that.id);
 		uni.getSystemInfo({
 			success: function (res) {
 				that.height = res.windowHeight;
@@ -767,10 +651,6 @@ export default {
 		this.currentPage = !this.currentPage;
 	},
 	methods: {
-		// 操作菜单
-		moreNav() {
-			this.currentPage = !this.currentPage;
-		},
 		jumpUrl(url) {
 			uni.switchTab({
 				url
@@ -1020,7 +900,7 @@ export default {
 				this.$set(this.attr.productSelect, 'cart_num', this.storeInfo.min_qty);
 				// this.$set(this.attr.productSelect, 'vip_price', productSelect.vip_price);
 				this.$set(this, 'attrValue', res);
-				this.$set(this, 'attrTxt', this.$t(`已选择`));
+				this.$set(this, 'attrTxt', this.$t(`课程周期：`));
 				this.setRealPrice(this.storeInfo.id, productSelect.unique);
 			} else {
 				this.$set(this.attr.productSelect, 'image', productSelect.image);
@@ -1197,6 +1077,10 @@ export default {
 					);
 				});
 		},
+		isCourseId(id) {
+			const list = Array.isArray(this.courseProductIds) ? this.courseProductIds : [];
+			return list.some((value) => Number(value) === Number(id));
+		},
 		infoScroll: function () {
 			var that = this,
 				topArr = [],
@@ -1284,7 +1168,7 @@ export default {
 				this.$set(this.attr.productSelect, 'cart_num', this.storeInfo.min_qty);
 				this.$set(this, 'attrValue', value.join(','));
 				// this.$set(this.attr.productSelect, 'vip_price', productSelect.vip_price);
-				this.$set(this, 'attrTxt', this.$t(`已选择`));
+				this.$set(this, 'attrTxt', this.$t(`课程周期`));
 				this.setRealPrice(this.storeInfo.id, productSelect.unique);
 			} else if (!productSelect && productAttr.length) {
 				this.$set(this.attr.productSelect, 'store_name', this.storeInfo.store_name);
@@ -1536,8 +1420,26 @@ export default {
 				toLogin();
 			} else {
 				this.$refs.proSwiper.videoIsPause();
-				this.goCat(true);
+				if (!this.isCourseProduct) {
+					this.goCat(1);
+					return;
+				}
+				const attrValue = this.attrValue || '';
+				const specType = this.getSpecType(attrValue);
+				const price = (this.attr && this.attr.productSelect && this.attr.productSelect.price) || this.storeInfo.price || '';
+				const classId = (this.storeInfo && (this.storeInfo.class_id || this.storeInfo.classid || this.storeInfo.classId || this.storeInfo.bigclass_id || this.storeInfo.bigclassid)) || '';
+				uni.navigateTo({
+					url: `/pages/course/booking/index?id=${this.id}&price=${encodeURIComponent(price)}&spec=${specType}&attr=${encodeURIComponent(
+						attrValue
+					)}${classId ? `&classid=${classId}` : ''}`
+				});
 			}
+		},
+		getSpecType(value) {
+			const text = String(value || '');
+			if (text.includes('月')) return 'month';
+			if (text.includes('周')) return 'week';
+			return 'week';
 		},
 		open(data) {
 			this.showMenuIcon = data;
@@ -1802,18 +1704,16 @@ export default {
 }
 
 .product-con .footer {
-	padding: 0 20rpx 0 30rpx;
+	padding: 16rpx 24rpx calc(16rpx + env(safe-area-inset-bottom)) 24rpx;
 	position: fixed;
 	bottom: 0;
 	width: 100%;
 	box-sizing: border-box;
-	background-color: rgba(255, 255, 255, 0.85);
-	backdrop-filter: blur(10px);
+	background-color: rgba(246, 251, 247, 0.98);
 	z-index: 277;
-	border-top: 1rpx solid #f0f0f0;
-	height: 100rpx;
-	height: calc(100rpx + constant(safe-area-inset-bottom)); ///兼容 IOS<11.2/
-	height: calc(100rpx + env(safe-area-inset-bottom)); ///兼容 IOS>11.2/
+	border-top: 0;
+	height: 140rpx;
+	height: calc(140rpx + env(safe-area-inset-bottom)); ///兼容 IOS>11.2/
 	transform: translate3d(0, 100%, 0);
 	transition: all 0.3s cubic-bezier(0.25, 0.5, 0.5, 0.9);
 	.gift-icon {
@@ -1874,16 +1774,16 @@ export default {
 }
 
 .product-con .footer .bnt {
-	width: 444rpx;
-	height: 76rpx;
+	width: 100%;
+	height: 96rpx;
 }
 
 .product-con .footer .bnt .bnts {
-	width: 222rpx;
+	width: 100%;
 	text-align: center;
-	line-height: 76rpx;
+	line-height: 96rpx;
 	color: #fff;
-	font-size: 28rpx;
+	font-size: 30rpx;
 }
 
 .product-con .footer .bnt .joinCart {
@@ -1893,8 +1793,9 @@ export default {
 }
 
 .product-con .footer .bnt .buy {
-	border-radius: 0 50rpx 50rpx 0;
-	background-color: var(--view-theme);
+	border-radius: 999rpx;
+	background: linear-gradient(90deg, #3ccf78 0%, #17b26b 100%);
+	// background-image: linear-gradient(to right, #fa6514 0%, #e93323 100%);
 	// background-image: linear-gradient(to right, #fa6514 0%, #e93323 100%);
 }
 
@@ -2219,6 +2120,19 @@ action-sheet-item {
 	// justify-content: flex-end;
 	padding-left: 48px;
 	/* #endif */
+}
+
+.navbarBack {
+	position: absolute;
+	left: 20rpx;
+	bottom: 22rpx;
+	width: 56rpx;
+	height: 56rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #333;
+	font-size: 36rpx;
 }
 
 .home {

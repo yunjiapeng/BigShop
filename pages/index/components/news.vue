@@ -129,6 +129,7 @@
 		height: 88rpx;
 		padding: 0 20rpx;
 		background: #FFFFFF;
+		border-radius: var(--notice-inner-radius, 16rpx);
 	}
 
 	.news-left {
@@ -173,6 +174,7 @@
 	.news {
 		padding: 32rpx 24rpx;
 		background: #FFFFFF;
+		border-radius: var(--notice-inner-radius, 16rpx);
 	}
 
 	.news-top {

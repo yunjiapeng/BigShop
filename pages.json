@@ -57,6 +57,34 @@
 				"navigationStyle": "custom",
 				"navigationBarTextStyle": "white"
 			}
+		},
+		{
+			"path": "pages/course/booking/index",
+			"style": {
+				"navigationBarTitleText": "购买课程",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/course/activity_review/index",
+			"style": {
+				"navigationBarTitleText": "活动评价",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/course/class_dynamic/index",
+			"style": {
+				"navigationBarTitleText": "班级动态",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/course/contact_teacher",
+			"style": {
+				"navigationBarTitleText": "联系老师",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 	"subPackages": [{
@@ -849,12 +877,7 @@
 						"titleNView": {
 							"padding-left": "10px",
 							"padding-right": "10px",
-							"type": "transparent",
-							"buttons": [ 
-								{
-									"type": "menu" 
-								}
-							]
+							"type": "transparent"
 						}
 					}
 				}

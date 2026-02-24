@@ -1,5 +1,5 @@
 <template>
-	<view :style="colorStyle">
+	<view :style="colorStyle" class="order-pay-status">
 		<view class="payment-status" v-if="(!orderLottery || !order_pay_info.paid || is_gift) && loading && lotteryLoading">
 			<!--失败时： 用icon-iconfontguanbi fail替换icon-duihao2 bg-color-->
 			<view class="iconfont icons icon-duihao2 bg-color" v-if="order_pay_info.paid || order_pay_info.pay_type == 'offline'"></view>
@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import { userShare } from '@/api/user.js';
+import { userShare, courseOrderBackfill } from '@/api/user.js';
 import lotteryModel from './payLottery.vue';
 import giftModal from './components/giftModal.vue';
 import { getOrderDetail, orderCoupon } from '@/api/order.js';
@@ -150,7 +150,8 @@ export default {
 			H5ShareBox: false,
 			is_gift: 0,
 			storeInfo: {},
-			mpGiftImg: HTTP_REQUEST_URL + '/statics/images/gift_share.jpg'
+			mpGiftImg: HTTP_REQUEST_URL + '/statics/images/gift_share.jpg',
+			backfillProcessing: false
 		};
 	},
 	computed: mapGetters(['isLogin']),
@@ -296,6 +297,7 @@ export default {
 						nickname: res.data.nickname,
 						code: res.data.gift_code
 					};
+					this.tryCourseBackfill(res.data);
 					// #ifdef H5
 					if (this.is_gift) this.setOpenShare();
 					// #endif
@@ -312,6 +314,54 @@ export default {
 				that.couponList = res.data;
 			});
 		},
+			getCourseBackfillKey(orderId) {
+				return `course_order_backfill_${orderId}`;
+			},
+			tryCourseBackfill(orderInfo) {
+				if (!orderInfo || !orderInfo.paid || this.backfillProcessing) return;
+				const key = this.getCourseBackfillKey(this.orderId);
+				const raw = uni.getStorageSync(key);
+				if (!raw) return;
+				let payload = {};
+				try {
+					payload = JSON.parse(raw);
+				} catch (e) {
+					uni.removeStorageSync(key);
+					return;
+				}
+				if (!Object.keys(payload).length) {
+					uni.removeStorageSync(key);
+					return;
+				}
+				const basePayload = { ...payload };
+				const listRaw = basePayload.bigclass_child_uids;
+				if (listRaw) delete basePayload.bigclass_child_uids;
+				if (basePayload.bigclass_child_uid) delete basePayload.bigclass_child_uid;
+				let childList = [];
+				if (Array.isArray(listRaw)) childList = listRaw;
+				if (!childList.length && typeof listRaw === 'string') {
+					childList = listRaw.split(',').filter(item => item);
+				}
+				if (!childList.length && payload.bigclass_child_uid) {
+					childList = [payload.bigclass_child_uid];
+				}
+				this.backfillProcessing = true;
+				const tasks = childList.length
+					? childList.map(childId => courseOrderBackfill({
+						order_id: this.orderId,
+						...basePayload,
+						bigclass_child_uid: childId
+					}))
+					: [courseOrderBackfill({
+						order_id: this.orderId,
+						...basePayload
+					})];
+				Promise.all(tasks).then(() => {
+					uni.removeStorageSync(key);
+				}).finally(() => {
+					this.backfillProcessing = false;
+				});
+			},
 		/**
 		 * 去首页关闭当前所有页面
 		 */
@@ -445,10 +495,11 @@ export default {
 	text-shadow: 0px 4px 0px rgba(255, 255, 255, 0.5);
 	border: 6rpx solid #f5f5f5;
 	margin: -76rpx auto 0 auto;
-	background-color: #999;
+	background-color: var(--view-theme);
 }
 
 .payment-status .icons.icon-iconfontguanbi {
+	background-color: #999;
 	text-shadow: 0px 4px 0px #6c6d6d;
 }
 
@@ -493,6 +544,10 @@ export default {
 	text-align: center;
 	line-height: 86rpx;
 	margin: 0 auto 20rpx auto;
+}
+
+.order-pay-status {
+	--view-theme: #41b035;
 }
 .share-box {
 	z-index: 1000;

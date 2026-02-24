@@ -1,37 +1,7 @@
 <template>
-	<view>
-		<view id="home" class="home acea-row row-center-wrapper"
-			:class="[returnShow ? 'p10':'p20', text_opacity >= 1 ? 'opacity':'']" :style="{ marginTop: menuButton.top +'px', width: menuButton.width + 'px'}">
-			<view v-if="returnShow" class="iconfont icon-xiangzuo" :class="text_opacity >= 1 ? 'opacity':''"
-				@tap="returns">
-			</view>
-
-			<view class="line" v-if="returnShow"></view>
-			<view class="animation-box">
-				<transition name="fade">
-					<view v-if="!Active" class="iconfont icon-gengduo4" :class="text_opacity >= 1 ? 'opacity':''"
-						@click="open">
-					</view>
-					<!-- 	<view v-if="Active" class="iconfont icon-guanbi5" @click="open">
-					</view> -->
-				</transition>
-				<transition name="fade" mode="out-in">
-					<!-- 	<view v-if="!Active" class="iconfont icon-gengduo4" @click="open">
-					</view> -->
-					<view v-if="Active" class="iconfont icon-guanbi5" :class="text_opacity >= 1 ? 'opacity':''"
-						@click="open">
-					</view>
-				</transition>
-			</view>
-			<view class="homeCon bg-color" :class="Active === true ? 'active' : ''" v-if="Active" @click="open">
-				<view class="homeCon-box" v-for="(item,index) in iconList" :key="index"
-					@click="jumpUrl(item.path,item.jumpType)">
-					<text class='iconfont' :class="item.iconName">
-					</text>
-					<text class="text">{{item.name}}</text>
-				</view>
-
-			</view>
+	<view v-if="returnShow">
+		<view id="home" class="home acea-row row-center-wrapper" :class="[text_opacity >= 1 ? 'opacity' : '']" :style="homeStyle">
+			<view class="iconfont icon-xiangzuo" :class="text_opacity >= 1 ? 'opacity' : ''" @tap="returns"></view>
 		</view>
 	</view>
 </template>
@@ -41,42 +11,10 @@
 		name: "menuIcon",
 		data() {
 			return {
-				Active: false,
-				returnShow: true, //判断顶部返回是否出现
+				returnShow: true,
 				homeTop: 20,
 				text_opacity: 0,
-				menuButton:{},
-				iconList: [{
-						name: this.$t(`首页`),
-						iconName: "icon-shouye8",
-						path: '/pages/index/index',
-						jumpType: 1
-					},
-					{
-						name: this.$t(`购物车`),
-						iconName: "icon-gouwuche7",
-						path: '/pages/order_addcart/order_addcart',
-						jumpType: 1
-					},
-					{
-						name: this.$t(`搜索`),
-						iconName: "icon-sousuo6",
-						path: '/pages/goods/goods_search/index',
-						jumpType: 0
-					},
-					{
-						name: this.$t(`我的收藏`),
-						iconName: "icon-shoucang3",
-						path: '/pages/users/user_goods_collection/index',
-						jumpType: 0
-					},
-					{
-						name: this.$t(`个人中心`),
-						iconName: "icon-yonghu1",
-						path: '/pages/user/index',
-						jumpType: 1
-					}
-				]
+				menuButton: {},
 			};
 		},
 		props: {
@@ -84,17 +22,29 @@
 				type: Boolean,
 				default: false
 			},
+			showMenu: {
+				type: Boolean,
+				default: true
+			},
 			opacity: {
 				type: Number,
 				default: 1
 			}
 		},
 		watch: {
-			showMenuIcon(e) {
-				this.Active = e
-			},
 			opacity(e) {
-				this.text_opacity = e
+				this.text_opacity = e;
+			}
+		},
+		computed: {
+			homeStyle() {
+				if (this.menuButton && this.menuButton.width) {
+					return {
+						marginTop: this.menuButton.top + 'px',
+						width: this.menuButton.width + 'px'
+					};
+				}
+				return {};
 			}
 		},
 		mounted() {
@@ -114,16 +64,17 @@
 			});
 		},
 		methods: {
-			open() {
-				this.Active = !this.Active
-				if (this.Active) this.$emit('open', true)
-			},
-			// 后退
 			returns() {
-				uni.navigateBack();
-			},
-			jumpUrl(url, type) {
-				(type === 1 ? uni.switchTab : uni.navigateTo)({url})
+				const pages = getCurrentPages();
+				if (pages.length <= 1) {
+					uni.switchTab({
+						url: '/pages/index/index'
+					});
+					return;
+				}
+				uni.navigateBack({
+					delta: 1
+				});
 			},
 		}
 	}

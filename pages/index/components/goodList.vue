@@ -14,9 +14,8 @@
           <view class="flex-1 flex-col justify-between pl-20">
             <view class="w-full fs-28 h-80 lh-40rpx line2"
                   v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-				  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-				  {{item.store_name}}
-			</view>
+              {{item.store_name}}
+            </view>
             <view class="flex items-end flex-wrap mt-8 w-full" v-if="checkboxInfo.includes(1)">
               <BaseTag
                   :text="label.name"
@@ -95,10 +94,10 @@
                     :borderRadius="imgStyle"></easy-loadimage>
               </view>
               <view class="info_box" :style="[bgRadius2]">
-				<view class="w-full line2 fs-28 text--w111-333 lh-40rpx"
-				      v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-					  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-					  {{item.store_name}}</view>
+                <view class="w-full line2 fs-28 text--w111-333 lh-40rpx"
+                      v-if="checkboxInfo.includes(0)" :style="[productStyle]">
+                  {{item.store_name}}
+                </view>
                 <view class="flex items-end flex-wrap mt-8 w-full" v-if="checkboxInfo.includes(1)">
                   <BaseTag
                       :text="label.name"
@@ -170,8 +169,8 @@
               <view class="info_box" :style="[bgRadius2]">
                 <view class="w-full line2 fs-28 text--w111-333 lh-40rpx"
                       v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-					  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-					  {{item.store_name}}</view>
+                  {{item.store_name}}
+                </view>
                 <view class="flex items-end flex-wrap mt-8 w-full" v-if="checkboxInfo.includes(1)">
                   <BaseTag
                       :text="label.name"
@@ -241,9 +240,8 @@
             <view class="flex-1 pl-20">
               <view class="w-full fs-26 h-72 lh-36rpx line2 mb-20"
                     v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-					<text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-					{{item.store_name}}
-			  </view>
+                {{item.store_name}}
+              </view>
               <baseMoney :money="item.price" symbolSize="24" integerSize="40" decimalSize="24" weight
                          :color="priceColor" v-if="checkboxInfo.includes(2)"></baseMoney>
             </view>
@@ -262,9 +260,8 @@
                 :borderRadius="imgStyle"></easy-loadimage>
             <view class="w-full fs-28 h-80 lh-40rpx line2 mt-20"
                   v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-				  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-				  {{item.store_name}}
-			</view>
+              {{item.store_name}}
+            </view>
             <view class="flex-between-center mt-14">
               <baseMoney :money="item.price" symbolSize="24" integerSize="40" decimalSize="24" weight
                          :color="priceColor" v-if="checkboxInfo.includes(2)"></baseMoney>
@@ -296,9 +293,8 @@
           <view class="p-24">
             <view class="w-full line1 fs-28 text--w111-333 lh-40rpx"
                   v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-				  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-				  {{item.store_name}}
-			</view>
+              {{item.store_name}}
+            </view>
             <view class="flex items-end flex-wrap mt-8 w-full" v-if="checkboxInfo.includes(1)">
               <BaseTag
                   :text="label.name"
@@ -374,9 +370,8 @@
                 :borderRadius="imgStyle"></easy-loadimage>
             <view class="w-200 fs-28 h-80 lh-40rpx line2 break_word mt-20"
                   v-if="checkboxInfo.includes(0)" :style="[productStyle]">
-				  <text v-if="item.brand_name" class="brand-tag">{{ item.brand_name }}</text>
-				  {{item.store_name}}
-			</view>
+              {{item.store_name}}
+            </view>
             <view class="flex-between-center mt-8">
               <baseMoney :money="item.price" symbolSize="24" integerSize="40" decimalSize="24" weight
                          :color="priceColor" v-if="checkboxInfo.includes(2)"></baseMoney>
@@ -574,7 +569,7 @@ export default {
     /*商品名称样式*/
     productStyle(){
       return {
-        color: this.dataConfig.goodsNameColor.color[0].item,
+        color: '#000000',
         fontWeight: this.dataConfig.goodsName.tabVal ? 'normal' : 'bold'
       }
     },
